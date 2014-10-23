@@ -16,29 +16,71 @@
         
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" type="text/css" href="index.css">
     </head>
     <body>
         
         <div class="container" style="margin-top:40px;width:95%;">
             <div class="row">
 		<div class="col-md-3">
-		    <div class="panel panel-default">
-			<div class="panel-heading">
-			    <h3 class="panel-title">Filters</h3>
-			</div>
-			<div class="panel-body">
-			    
-			</div>
+			<div class="panel panel-default mylisting">
+				<div class="panel-heading">
+				    <h3 class="panel-title">Collections</h3>
+				</div>
+				
+				<div class="panel-body">
+					<ul class="list-group">
+						<a href="#">
+							<li class="list-group-item">
+								<span class="glyphicon glyphicon-file"></span>
+								All Documents							
+							</li>
+						</a>
+						<a href="#">
+							<li class="list-group-item">
+								<span class="glyphicon glyphicon-time"></span>
+								Recently Added							
+							</li>
+						</a>
+						<a href="#">
+							<li class="list-group-item">
+								<span class="glyphicon glyphicon-star"></span>
+								Favorites							
+							</li>
+						</a>
+					</ul>
+							    
+				</div>
+		    </div>
+
+		    <div class="panel panel-default mylisting">
+				<div class="panel-heading">
+				    <h3 class="panel-title">Filters</h3>
+				</div>
+				<div class="panel-body">
+				    <select class="form-control">
+				    	<option>Filter by authors</option>
+				    </select>
+
+				    <select multiple class="form-control" size="10">
+				      <option>All</option>
+					  <option>Das, Falguni</option>
+					  <option>Dey, Nirmalya</option>
+					  <option>Venkatesan</option>
+					  <option>Ghosh-Choudhury</option>
+					  <option>Goutam Ghosh</option>
+					</select>
+				</div>
 		    </div>
 		</div>
                 <div class="col-lg-6">
                     <div class="panel panel-default">
-			<div class="panel-body">
-			    <form class="navbar-form navbar-right">
-				<input type="text" class="form-control" placeholder="Search...">
-			    </form>
+						<div class="panel-body">
+			    			<form class="navbar-form navbar-right">
+								<input type="text" class="form-control" placeholder="Search...">
+			    			</form>
 			
-			    <div class="table-responsive">
+			    			<div class="table-responsive">
 				<table class="table table-striped">
 				    <thead>
 					<tr>

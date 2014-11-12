@@ -1,8 +1,8 @@
-from flask import render_template, request
+from flask import render_template, request, jsonify
 from app import app, db
 from app.models import Sentence, Entity, Interaction
-import os
-#from multiprocessing import Pool
+from json import dumps
+import os, sys, requests, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
 
 inputFilesDir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'inputFiles')
 allowedFileExtensions = ['txt']
@@ -21,6 +21,69 @@ def index():
 	
 	return render_template('index.html')
 
+# REST Interface
+
+@app.route('/sentences/')
+def sentences():
+	return dumps([s.serialize for s in Sentence.query.all()])
+
+@app.route('/sentences/<int:id>')
+def sentence(id):
+	return dumps(Sentence.query.get(id).serialize)
+
+@app.route('/test')
+def test():
+	"""Sandbox for testing purposes."""
+	return ""
+
+@app.route('/sentences/<int:id>/metadata')
+def getMetadata(id):
+	
+	s = Sentence.query.get(id)
+	
+	url = "http://www.ncbi.nlm.nih.gov/pubmed/?term={}&report=xml&format=text".format(s.pubmedID)
+	f = urllib.request.urlopen(url)
+	root = ET.fromstring(html.unescape(f.read().decode('utf-8')))
+	
+	title = decode(next(root.iter('ArticleTitle')).text)
+	journal = decode(next(root.iter('Title')).text)
+	
+	try:
+	    abstract = decode(next(root.iter('AbstractText')).text)
+	except:
+	    abstract = ""
+	
+	try:
+		try:
+			year = decode(next(root.iter('PubDate')).find('Year').text)
+		except:
+			year = decode(next(root.iter('ArticleDate')).find('Year').text)
+	except:
+		year = 0    
+	
+	# DOI
+	#jsonURL = "http://www.pmid2doi.org/rest/json/doi/{}".format(self.pmid)
+	#response = urllib.request.urlopen(jsonURL)
+	#jsonObj = json.loads(response.read().decode("utf-8"))
+	
+	doi = ""
+	for articleID in root.iter('ArticleId'):
+		if articleID.attrib["IdType"] == "doi":
+			doi = decode(articleID.text).strip()
+	
+	authors = []
+	for author in root.iter('Author'):
+		try:
+			firstname = decode(author.find('ForeName').text)
+			surname = decode(author.find('LastName').text)
+			authors.append("{}, {}".format(surname, firstname))
+		except:
+			pass
+		
+	return dumps({ 'title': title, 'authors': authors, 'journal': journal, 'year': year, 'abstract': abstract, 'doi': doi, 'pmid': s.pubmedID })
+
+# Helper methods for data import
+
 def importDataFromFile(inputFile, numberOfWorkerThreads = 10):
 	with open(inputFile, 'r', encoding = 'utf8') as input:
 		lines = [line.encode('ascii', 'ignore').decode('ascii').strip() for line in input.readlines()]
@@ -36,10 +99,6 @@ def importDataFromFile(inputFile, numberOfWorkerThreads = 10):
 			    allBlockLines.append(currentBlockLines)
 			    currentBlockLines = []
 
-		# pool the jobs to create blocks and retrieve related article metadata
-		#pool = Pool(numberOfWorkerThreads)
-		#pool.map(createBlock, allBlockLines)
-		# apparently database locked this way, let's try it sequentially:
 		for block in allBlockLines:
 			createBlock(block)
 		

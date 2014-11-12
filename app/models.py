@@ -21,8 +21,22 @@ class Entity(Keyword):
     sentence_id = db.Column(db.Integer, db.ForeignKey('sentence.id'))
     
     def __repr__(self):
-        return "{} {} ({}, {})".format(self.type, self.name, self.databaseID, self.software)
-
+        return str(self.serialize)
+    
+    @property
+    def serialize(self):
+        return {
+            'type': self.type,
+            'name': self.name,
+            'software': self.software,
+            'databaseID': self.databaseID,
+            'start': self.start,
+            'end': self.end,
+            'grade': self.grade,
+            'comment': self.comment,
+            'sentence_id': self.sentence_id
+        }
+    
 class Interaction(Keyword):
     __tablename__ = "interaction"
     
@@ -31,8 +45,19 @@ class Interaction(Keyword):
     sentence_id = db.Column(db.Integer, db.ForeignKey('sentence.id'))
     
     def __repr__(self):
-        return self.type
-
+        return str(self.serialize)
+    
+    @property
+    def serialize(self):
+        return {
+            'type': self.type,
+            'start': self.start,
+            'end': self.end,
+            'grade': self.grade,
+            'comment': self.comment,
+            'sentence_id': self.sentence_id
+        }
+    
 class Sentence(db.Model):
     __tablename__ = "sentence"
 
@@ -49,4 +74,18 @@ class Sentence(db.Model):
     interactions = db.relationship('Interaction', backref = 'sentence') 
     
     def __repr__(self):
-        return self.literal
+        return str(self.serialize)
+    
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'pubmedID': self.pubmedID,
+            'sentenceID': self.sentenceID,
+            'literal': self.literal,
+            'score': self.score,
+            'grade': self.grade,
+            'comment': self.comment,
+            'entities': [e.serialize for e in self.entities],
+            'interactions': [i.serialize for i in self.interactions]
+        }

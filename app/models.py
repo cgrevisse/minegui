@@ -70,8 +70,8 @@ class Sentence(db.Model):
     comment = db.Column(db.Text)
     
     # lazy = 'dynamic'
-    entities = db.relationship('Entity', backref = 'sentence')
-    interactions = db.relationship('Interaction', backref = 'sentence') 
+    entities = db.relationship('Entity', backref = 'sentence', lazy="joined", join_depth=2)
+    interactions = db.relationship('Interaction', backref = 'sentence', lazy="joined", join_depth=2) 
     
     def __repr__(self):
         return str(self.serialize)

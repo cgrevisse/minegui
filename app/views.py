@@ -133,7 +133,7 @@ def createBlock(blockLines):
 				type = lineComponents[2]
 				
 				# add Interaction
-				i = Interaction(type = type, start = start, end = start, sentence = s, grade = defaultGrade, comment = defaultComment)
+				i = Interaction(type = type, start = start, end = end, sentence = s, grade = defaultGrade, comment = defaultComment)
 				db.session.add(i)
 			else:
 				type, software = typeSoftware(kind)

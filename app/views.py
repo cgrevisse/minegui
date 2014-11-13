@@ -1,8 +1,10 @@
-from flask import render_template, request, jsonify
+from flask import render_template, request, jsonify, make_response, url_for, redirect
 from app import app, db
 from app.models import Sentence, Entity, Interaction
 from json import dumps
-import os, sys, requests, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
+from .xmllib import dict2xmlstring
+import os, sys, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
+
 
 inputFilesDir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'inputFiles')
 allowedFileExtensions = ['txt']
@@ -25,11 +27,35 @@ def index():
 
 @app.route('/sentences/')
 def sentences():
-	return dumps([s.serialize for s in Sentence.query.all()])
+	return dumps([s.serialize for s in Sentence.query.all()]) 
 
 @app.route('/sentences/<int:id>')
 def sentence(id):
 	return dumps(Sentence.query.get(id).serialize)
+
+# Export and Import
+@app.route('/export/')
+def export_all():
+	data = []
+	for s in Sentence.query.all():
+		sdict = s.__dict__
+		print(sdict)
+		del sdict['_sa_instance_state']
+		sdict = eval(repr(sdict))
+		data.append(sdict)
+	# Delete ORM specific attribute
+	xml = dict2xmlstring(data)
+	return download(xml)
+
+@app.route('/export/<int:id>')
+def export_single(id):
+	data = Sentence.query.get(id).__dict__
+	# Delete ORM specific attribute
+	del data['_sa_instance_state']
+	data = eval(repr(data))
+	xml = dict2xmlstring(data)
+	return download(xml)
+
 
 @app.route('/test')
 def test():
@@ -82,6 +108,24 @@ def getMetadata(id):
 		
 	return dumps({ 'title': title, 'authors': authors, 'journal': journal, 'year': year, 'abstract': abstract, 'doi': doi, 'pmid': s.pubmedID })
 
+def generate_export_filename():
+	import datetime
+	import time
+	ts = time.time()
+	return datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S_export.xml')
+
+def download(xml):
+	""" build response to force download """
+	filename = generate_export_filename()
+	# We need to modify the response, so the first thing we 
+    # need to do is create a response out of the XML string
+	response = make_response(xml)
+    # This is the key: Set the right header for the response
+    # to be downloaded, instead of just printed on the browser
+	response.headers["Content-Disposition"] = "attachment; filename=%s" % (filename)
+	return response
+
+
 # Helper methods for data import
 
 def importDataFromFile(inputFile, numberOfWorkerThreads = 10):
@@ -133,7 +177,7 @@ def createBlock(blockLines):
 				type = lineComponents[2]
 				
 				# add Interaction
-				i = Interaction(type = type, start = start, end = end, sentence = s, grade = defaultGrade, comment = defaultComment)
+				i = Interaction(type = type, start = start, end = start, sentence = s, grade = defaultGrade, comment = defaultComment)
 				db.session.add(i)
 			else:
 				type, software = typeSoftware(kind)

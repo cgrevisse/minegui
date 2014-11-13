@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        
+        <title>minegui@UL | User-friendly interface for curating and annotating text mining results</title>
+		
+        <meta name="author" content="Christian Gr&eacute;visse; Gilles Neyens; Brian Shaft; Rapha&euml;l Sirres" />
+        <meta name="keywords" content="" />
+        <meta name="description" content="" />
+
+        <meta name="robots" content="noindex" />
+        <meta name="robots" content="nofollow" />
+        
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" type="text/css" href="/static/style.css">
+    </head>
+    <body>
+	<div class="container" style="width:95%;">
+            <div class="row" style="margin-top:40px;">
+		
+		<!-- Left Column: Data Management & Filters -->
+		<div class="col-md-3">
+		    
+		    <!-- Data Management -->
+		    <div class="panel panel-default mylisting">
+			<div class="panel-heading">
+			    <h3 class="panel-title">Data Management</h3>
+			</div>
+			
+			<div class="panel-body">
+			    <div class="list-group">
+				<a href="#" class="list-group-item" data-toggle="modal" data-target="#importModal"><span class="glyphicon glyphicon-import"></span> <b>Import</b></a>
+				
+				<!-- Data Import Modal Popup -->
+				<div class="modal fade" id="importModal" tabindex="-1" role="dialog">
+				    <div class="modal-dialog">
+					<div class="modal-content">
+					    <div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+						<h4 class="modal-title">Import data from file</h4>
+					    </div>
+					    
+					    <form enctype="multipart/form-data" action="{{ url_for('index') }}" method="post">
+					    	<div class="modal-body">
+						    <p class="help-block">Please select a text file to import. Only <code>.txt</code> files are accepted.</p>
+						    <input type="file" name="importFileInput" />
+						</div>
+						<div class="modal-footer">
+						    <button type="submit" class="btn btn-success">Import ...</button>
+						</div>
+					    </form>
+					</div>
+				    </div>
+				</div>
+				
+				<a href="#" class="list-group-item"><span class="glyphicon glyphicon-export"></span> <b>Export</b></a>
+			    </div>
+			</div>
+		    </div>
+
+		    <!-- Filters -->
+		    <div class="panel panel-default mylisting">
+			<div class="panel-heading">
+			    <h3 class="panel-title">Filters</h3>
+			</div>
+			
+			<div class="panel-body">
+			    <select class="form-control">
+				<option>Filter by Entity</option>
+				<option>Filter by Interaction</option>
+			    </select>
+
+			    <input type="text" class="form-control" placeholder="Search ..." />
+			    
+			    <select multiple class="form-control" size="10">
+				<option>All</option>
+			    </select>
+			</div>
+		    </div>
+		    
+		</div>
+		
+		<!-- Sentence List -->
+                <div class="col-lg-6">
+                    <div class="panel panel-default">
+			<div class="panel-body">
+			    <div style="height: 400px !important; overflow: scroll;">
+				<div class="table-responsive">
+				    <table class="table table-striped">
+					<thead>
+					    <tr>
+						<th>Sentence</th>
+						<th>Score</th>
+						<th>Grade</th>
+						<th>&nbsp;</th>
+					    </tr>
+					</thead>
+					<tbody id="sentenceList"></tbody>
+				    </table>
+				</div>
+			    </div>
+			</div>
+		    </div>
+                </div>
+		
+		<!-- Paper Metadata -->
+		<div class="col-md-3">
+		    <div class="panel panel-default" id="metaData">
+			<div class="panel-heading">
+			    <h3 class="panel-title">Paper Details</h3>
+			</div>
+			<div class="panel-body">
+			    <p style="font-style:italic;font-size:8pt;">
+				PubMed ID: <a id="metaDataPubMedID" target="_blank"></a><br/>
+				DOI: <a id="metaDataDOI" target="_blank"></a>
+			    </p>
+			    
+			    <address><strong>Title</strong><br><span id="metaDataTitle"></span></address>
+			    <address><strong>Author(s)</strong><br><span id="metaDataAuthors"></span></address>
+			    <address><strong>Journal</strong><br><span id="metaDataJournal"></span></address>
+			    <address><strong>Year</strong><br><span id="metaDataYear"></span></address>
+			    
+			    <div class="well well-sm">
+				<h6>Abstract</h6>
+				<p style="font-size:10pt;font-style:italic;text-align: justify;" id="metaDataAbstract"></p>
+			    </div>
+			</div>
+		    </div>
+		</div>
+		
+            </div>
+        </div>
+        
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+	<script src="/static/scripts.js"></script>
+	<script src="/static/jquery.loadie.min.js"></script>
+  </body>
+</html>

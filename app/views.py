@@ -23,6 +23,29 @@ def index():
 	
 	return render_template('index.html')
 
+@app.route('/feedback/', methods=['GET', 'POST'])
+def saveFeedback():
+	print("works")
+	if request.method == 'POST':
+		print("redirecting")
+		entityNum=int(request.form['entity_num'])
+		for i in range(entityNum):
+			entity = Entity.query.get(int(request.form['EntityID_'+str(i)]))
+			entity.grade=int(request.form['EntityGrade_'+str(i)])
+			entity.comment=request.form['EntityComment_'+str(i)]
+		interactionNum=int(request.form['interaction_num'])
+		for i in range(interactionNum):
+			interaction= Interaction.query.get(int(request.form['InteractionID_'+str(i)]))
+			interaction.grade=int(request.form['InteractionGrade_'+str(i)])
+			interaction.comment=request.form['InteractionComment_'+str(i)]
+		sentence=Sentence.query.get(int(request.form['SentenceID']))
+		sentence.grade=request.form['SentenceGrade']
+		sentence.comment=request.form['SentenceComment']
+		db.session.commit()
+		return redirect(url_for('index'))
+	else:
+		return redirect(url_for('index'))
+
 # REST Interface
 
 @app.route('/sentences/')
@@ -46,6 +69,7 @@ def export_all():
 	# Delete ORM specific attribute
 	xml = dict2xmlstring(data)
 	return download(xml)
+
 
 @app.route('/export/<int:id>')
 def export_single(id):

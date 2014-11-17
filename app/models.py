@@ -26,6 +26,7 @@ class Entity(Keyword):
     @property
     def serialize(self):
         return {
+            'id': self.id,
             'type': self.type,
             'name': self.name,
             'software': self.software,
@@ -50,6 +51,7 @@ class Interaction(Keyword):
     @property
     def serialize(self):
         return {
+            'id': self.id,
             'type': self.type,
             'start': self.start,
             'end': self.end,

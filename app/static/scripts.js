@@ -108,7 +108,7 @@ $(document).on('click', '.btn.btn-warning.btn-xs', function () {
 			html+='		    </div>';
 					    
 			html+='		    <form enctype="multipart/form-data" action="';
-			html+="{{ url_for('index') }}";
+			html+="/feedback/";
 			html+='" method="post">';
 			html+='		    	<div class="modal-body">';
 			html+='				<table class="table table-striped">';
@@ -121,33 +121,42 @@ $(document).on('click', '.btn.btn-warning.btn-xs', function () {
 			html+='					</tr>';
 			html+='				</thead>';
 			html+='				<tbody>';
+			var i=0;
 			$.each(data.entities, function() {
+				html+='<input type="hidden" name="EntityID_'+i+'" value="'+this.id+'"/>';
 				html+='					<tr>';
 				html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end)+'"><span class="label label-success">'+data.literal.slice(this.start,this.end)+'</span></span></td>';
 				html+='						<td>'+this.name+'</td>';
-				html+='						<td><div class="rateit" data-rateit-value="'+this.grade+'" data-rateit-ispreset="true" data-rateit-step="1"></div></td>';
-				html+='						<td><textarea class="form-control" rows="5" id="comment">'+this.comment+'</textarea></td>';
+				html+='						<td><input name="EntityGrade_'+i+'" type="range" value="'+this.grade+'" id="Entityrange'+this.id+'"><div class="rateit" data-rateit-backingfld="#Entityrange'+this.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
+				html+='						<td><textarea name="EntityComment_'+i+'" class="form-control" rows="5" id="comment">'+this.comment+'</textarea></td>';
 				html+='					</tr>';
+				i=i+1;
 			});
+			i=0;
+			html+='<input type="hidden" name="entity_num" value="'+data.entities.length+'"/>';
 			$.each(data.interactions, function() {
+				html+='<input type="hidden" name="InteractionID_'+i+'" value="'+this.id+'"/>';
 				html+='					<tr>';
 				html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end)+'"><span class="label label-danger">'+data.literal.slice(this.start,this.end)+'</span></span></td>';
 				html+='						<td>'+this.type+'</td>';
-				html+='						<td><div class="rateit" data-rateit-value="'+this.grade+'" data-rateit-ispreset="true" data-rateit-step="1"></div></td>';
-				html+='						<td><textarea class="form-control" rows="5" id="comment">'+this.comment+'</textarea></td>';
+				html+='						<td><input name="InteractionGrade_'+i+'" type="range" value="'+this.grade+'" id="Interactionrange'+this.id+'"><div class="rateit" data-rateit-backingfld="#Interactionrange'+this.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
+				html+='						<td><textarea name="InteractionComment_'+i+'" class="form-control" rows="5" id="comment">'+this.comment+'</textarea></td>';
 				html+='					</tr>';
+				i=i+1;
 			});
+			html+='<input type="hidden" name="interaction_num" value="'+data.interactions.length+'"/>';
+			html+='<input type="hidden" name="SentenceID" value="'+data.id+'"/>';
 			html+='					<tr>';
 			html+='						<td>Overall feedback</td>';
 			html+='						<td></td>';
-			html+='						<td><div class="rateit" data-rateit-value="'+data.grade+'" data-rateit-ispreset="true" data-rateit-step="1"></div></td>';
-			html+='						<td><textarea class="form-control" rows="5" id="comment">'+data.comment+'</textarea></td>';
+			html+='						<td><input name="SentenceGrade" type="range" value="'+data.grade+'" id="range'+data.id+'"><div class="rateit" data-rateit-backingfld="#range'+data.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
+			html+='						<td><textarea name="SentenceComment"  class="form-control" rows="5" id="comment">'+data.comment+'</textarea></td>';
 			html+='					</tr>';
 			html+='					</tbody>';
 			html+='				</table>			';
 			html+='			</div>';
 			html+='			<div class="modal-footer">';
-			html+='				<button type="submit" class="btn btn-danger">Cancel</button>';
+			html+='				<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>';
 			html+='			    <button type="submit" class="btn btn-success">Save</button>';
 			html+='			</div>';
 			html+='		    </form>';

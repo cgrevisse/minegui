@@ -17,6 +17,7 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
         <link rel="stylesheet" type="text/css" href="/static/style.css">
+		<link rel="stylesheet" type="text/css" href="/static/rateit.css">
     </head>
     <body>
 	<div class="container" style="width:95%;">
@@ -57,9 +58,7 @@
 				    </div>
 				</div>
 				
-				<a href="/export" class="list-group-item">
-					<span class="glyphicon glyphicon-export"></span> <b>Export</b>
-				</a>
+				<a href="/export" class="list-group-item"><span class="glyphicon glyphicon-export"></span> <b>Export</b></a>
 			    </div>
 			</div>
 		    </div>
@@ -109,6 +108,10 @@
 		    </div>
                 </div>
 		
+		<!-- Grade Dialog -->
+		<div id="gradeContainer">
+		</div>
+		
 		<!-- Paper Metadata -->
 		<div class="col-md-3">
 		    <div class="panel panel-default" id="metaData">
@@ -141,5 +144,6 @@
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
 	<script src="/static/scripts.js"></script>
 	<script src="/static/jquery.loadie.min.js"></script>
+	<script src="/static/jquery.rateit.js"></script>
   </body>
 </html>

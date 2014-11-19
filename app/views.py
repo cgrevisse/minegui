@@ -42,7 +42,7 @@ def saveFeedback():
 		sentence.grade=request.form['SentenceGrade']
 		sentence.comment=request.form['SentenceComment']
 		db.session.commit()
-		return redirect(url_for('index'))
+		return dumps(sentence.serialize)
 	else:
 		return redirect(url_for('index'))
 

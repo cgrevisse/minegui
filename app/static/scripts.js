@@ -35,20 +35,21 @@ function populateSentenceList() {
                 //var stars = "";
                 //for(var i = 1; i <= this.grade; i++) stars += '<span class="glyphicon glyphicon-star"></span>'
                 //for(var i = this.grade + 1; i <= MAX_STARS; i++) stars += '<span class="glyphicon glyphicon-star-empty"></span>'
-                var stars='<div class="rateit" data-rateit-value="'+this.grade+'" data-rateit-ispreset="true" data-rateit-readonly="true"></div>';
+                var stars='<div id="SentenceGrade_'+this.id+'" class="rateit" data-rateit-value="'+this.grade+'" data-rateit-ispreset="true" data-rateit-readonly="true"></div>';
 				tr.append($('<td>' + stars +'</td>'))
                 
                 // TODO: use this.id to open popup and load data from REST interface /sentences/<id>
                 tr.append($('<td><button type="button" class="btn btn-warning btn-xs" data-sentenceid="'+ this.id +'"><span class="glyphicon glyphicon-tasks"></span> Curate</button></td>'));
                 
                 list.append(tr);
-                
+				//display grading stars
+                $('#SentenceGrade_'+this.id).rateit();
                 i++;
                 progress += (i/numberOfElements)/2;
                 $('body').loadie(progress);
             });
 			//display grading stars
-            $('.rateit').rateit();
+           // $('.rateit').rateit();
             $('.sentenceLine').mouseenter(function() {}).mouseleave(function() {}).click(function() {
                 
                 // truncate all
@@ -99,6 +100,7 @@ $(document).on('click', '.btn.btn-warning.btn-xs', function () {
         data: {},
         dataType: 'json',
         success: function(data) {
+	
 			var html='<div class="modal fade" id="curateModal" tabindex="-1" role="dialog">';
 			html+='	    <div id="gradedialogwidth" class="modal-dialog">';
 			html+='		<div class="modal-content">';
@@ -107,7 +109,7 @@ $(document).on('click', '.btn.btn-warning.btn-xs', function () {
 			html+='			<h4 class="modal-title">Feedback form</h4>';
 			html+='		    </div>';
 					    
-			html+='		    <form enctype="multipart/form-data" action="';
+			html+='		    <form id="gradingForm" enctype="multipart/form-data" action="';
 			html+="/feedback/";
 			html+='" method="post">';
 			html+='		    	<div class="modal-body">';
@@ -121,6 +123,13 @@ $(document).on('click', '.btn.btn-warning.btn-xs', function () {
 			html+='					</tr>';
 			html+='				</thead>';
 			html+='				<tbody>';
+			html+='<input type="hidden" name="SentenceID" value="'+data.id+'"/>';
+			html+='					<tr>';
+			html+='						<td>Overall feedback</td>';
+			html+='						<td></td>';
+			html+='						<td><input name="SentenceGrade" type="range" value="'+data.grade+'" id="range'+data.id+'"><div class="rateit" data-rateit-backingfld="#range'+data.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
+			html+='						<td><textarea name="SentenceComment"  class="form-control" rows="1" id="comment">'+data.comment+'</textarea></td>';
+			html+='					</tr>';
 			var i=0;
 			$.each(data.entities, function() {
 				html+='<input type="hidden" name="EntityID_'+i+'" value="'+this.id+'"/>';
@@ -128,7 +137,7 @@ $(document).on('click', '.btn.btn-warning.btn-xs', function () {
 				html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end)+'"><span class="label label-success">'+data.literal.slice(this.start,this.end)+'</span></span></td>';
 				html+='						<td>'+this.name+'</td>';
 				html+='						<td><input name="EntityGrade_'+i+'" type="range" value="'+this.grade+'" id="Entityrange'+this.id+'"><div class="rateit" data-rateit-backingfld="#Entityrange'+this.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
-				html+='						<td><textarea name="EntityComment_'+i+'" class="form-control" rows="5" id="comment">'+this.comment+'</textarea></td>';
+				html+='						<td><textarea name="EntityComment_'+i+'" class="form-control" rows="1" id="comment">'+this.comment+'</textarea></td>';
 				html+='					</tr>';
 				i=i+1;
 			});
@@ -140,24 +149,17 @@ $(document).on('click', '.btn.btn-warning.btn-xs', function () {
 				html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end)+'"><span class="label label-danger">'+data.literal.slice(this.start,this.end)+'</span></span></td>';
 				html+='						<td>'+this.type+'</td>';
 				html+='						<td><input name="InteractionGrade_'+i+'" type="range" value="'+this.grade+'" id="Interactionrange'+this.id+'"><div class="rateit" data-rateit-backingfld="#Interactionrange'+this.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
-				html+='						<td><textarea name="InteractionComment_'+i+'" class="form-control" rows="5" id="comment">'+this.comment+'</textarea></td>';
+				html+='						<td><textarea name="InteractionComment_'+i+'" class="form-control" rows="1" id="comment">'+this.comment+'</textarea></td>';
 				html+='					</tr>';
 				i=i+1;
 			});
 			html+='<input type="hidden" name="interaction_num" value="'+data.interactions.length+'"/>';
-			html+='<input type="hidden" name="SentenceID" value="'+data.id+'"/>';
-			html+='					<tr>';
-			html+='						<td>Overall feedback</td>';
-			html+='						<td></td>';
-			html+='						<td><input name="SentenceGrade" type="range" value="'+data.grade+'" id="range'+data.id+'"><div class="rateit" data-rateit-backingfld="#range'+data.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
-			html+='						<td><textarea name="SentenceComment"  class="form-control" rows="5" id="comment">'+data.comment+'</textarea></td>';
-			html+='					</tr>';
 			html+='					</tbody>';
 			html+='				</table>			';
 			html+='			</div>';
 			html+='			<div class="modal-footer">';
 			html+='				<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>';
-			html+='			    <button type="submit" class="btn btn-success">Save</button>';
+			html+='			    <button type="button" onclick="sendDataWithAjax()" class="btn btn-success">Save</button>';
 			html+='			</div>';
 			html+='		    </form>';
 			html+='		</div>';
@@ -183,6 +185,20 @@ $(document).on('click', '.btn.btn-warning.btn-xs', function () {
     });
 }
 
+function sendDataWithAjax(){
+$.ajax({
+	url: "/feedback/",
+	type: "post",
+	data: $('#gradingForm').serialize(),
+	dataType: 'json',
+    success: function(data) {
+		$('#curateModal').modal('hide');
+		$('#SentenceGrade_'+data.id).data('rateit-value',data.grade);
+		$('#SentenceGrade_'+data.id).rateit();
+	}
+	});
+
+}
 
 $(function() {
     populateSentenceList();

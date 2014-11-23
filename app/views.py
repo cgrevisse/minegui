@@ -50,7 +50,8 @@ def saveFeedback():
 
 @app.route('/sentences/')
 def sentences():
-	return dumps([s.serialize for s in Sentence.query.all()]) 
+	# return dumps([s.serialize for s in Sentence.query.all()])
+	return dumps({"data":[s.serialize for s in Sentence.query.all()]})
 
 @app.route('/sentences/<int:id>')
 def sentence(id):

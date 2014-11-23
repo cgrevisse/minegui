@@ -21,16 +21,14 @@
   	box-shadow: none;
 }
 
-td.sentenceLine div.truncate {
-   width: 250px;
-   white-space: nowrap;
-   overflow: hidden;
-   text-overflow: ellipsis;
+.truncate {
+	width: 250px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
  }
  
- #metaData {
-	display: none;
- }
+ #metaData { display: none; }
  
  .loadie {
 	position: absolute;
@@ -44,7 +42,7 @@ td.sentenceLine div.truncate {
 	z-index: 9999;
 }
 
-#gradingForm textarea{
+#gradingForm textarea {
 	overflow:auto;
 	resize:vertical;
 }

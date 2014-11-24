@@ -126,6 +126,14 @@ function populateSentenceList() {
                 },
                 "bSortable": false,
                 "searchable": false
+            },
+            {
+                "targets":5,
+                "data":null,
+                "render": function(data, type, row) {
+                    return JSON.stringify(row);
+                },
+                "visible":false    
             }
         ],
         "order": [[ 3, "desc" ]],
@@ -300,16 +308,17 @@ function contains(haystack, needle) {
 }
 
 // extended filter possibilities
-$.fn.dataTable.ext.search.push(
+$.fn.dataTableExt.afnFiltering.push(
+//$.fn.dataTable.ext.search.push(
     function(settings, data, dataIndex) {
         
         var search = searchField().val();
         var rowData = $("#sentenceTable").DataTable().data()[dataIndex];
 
-        // console.log("Search for " + search + " in " + rowData);
+        //console.log("Search for " + search + " in " + rowData);
         
         if(contains(rowData.pubmedID, search)) return true;
-        // if(contains(rowData.literal, search)) return true;
+        if(contains(rowData.literal, search)) return true;
         if(contains(rowData.comment, search)) return true;
         
         for(var i = 0; i < rowData.entities.length; i++) {

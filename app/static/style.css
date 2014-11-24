@@ -47,3 +47,8 @@
 	resize:vertical;
 }
 
+.dataTables_wrapper .dataTables_filter {
+	float: none!important;
+	text-align: left!important;
+}
+

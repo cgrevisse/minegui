@@ -80,6 +80,10 @@ function loadMetaData(id) {
     });
 }
 
+function searchField() {
+    return $(".dataTables_filter input");
+}
+
 function populateSentenceList() {
     
     $('#sentenceTable').dataTable({
@@ -94,7 +98,8 @@ function populateSentenceList() {
             },
             {
                 "targets":1,
-                "data":"score"
+                "data":"score",
+                "searchable": false
             },
             {
                 "targets": 2,
@@ -102,12 +107,15 @@ function populateSentenceList() {
                 "render": function(data, type, row) {
                     return '<div id="SentenceGrade_'+row["id"]+'" class="rateit" data-rateit-value="'+data+'" data-rateit-ispreset="true" data-rateit-readonly="true"></div>'
                 },
+                "iDataSort": 3,
+                "searchable": false
             },
             {
                 // additional for sorting
                 "targets":3,
                 "data": "grade",
-                "visible":false
+                "visible":false,
+                "searchable": false
             },
             {
                 // open gradeing popup button
@@ -115,7 +123,9 @@ function populateSentenceList() {
                 "data": null,
                 "render": function(data, type, row) {
                     return '<button type="button" class="btn btn-warning btn-xs" data-sentenceid="'+ row["id"] +'"><span class="glyphicon glyphicon-tasks"></span> Curate</button>'
-                }
+                },
+                "bSortable": false,
+                "searchable": false
             }
         ],
         "order": [[ 3, "desc" ]],
@@ -123,6 +133,28 @@ function populateSentenceList() {
         "fnDrawCallback": function(oSettings) { // fnInitComplete
             // display grading stars
             $(".rateit").rateit();
+            
+            // make search field a little prettier
+            searchField().addClass("form-control").attr("placeholder", "Filter ...");
+            
+            // delay search until 3 characters entered
+            /*
+            var dtable = $("#sentenceTable").dataTable().api();
+            searchField()
+                .unbind() // Unbind previous default bindings
+                .bind("keyup", function(event) { // Bind our desired behavior
+                    // If (the length is 3 or more characters, or) the user pressed ENTER, search
+                    if(event.keyCode == 13) {
+                        // Call the API search function
+                        dtable.search(this.value).draw();
+                    }
+                    // Ensure we clear the search if they backspace far enough
+                    if(this.value == "") {
+                        dtable.search("").draw();
+                    }
+                    return;
+                });
+            */
             
             // truncating mechanism
             $('.sentenceLine').click(function() {  
@@ -139,7 +171,11 @@ function populateSentenceList() {
                 
                 loadMetaData(id);
             });
+            
+            // focus on search field
+            searchField().focus();
         },
+        "oLanguage": { "sSearch": "" }
     });
 }
 
@@ -258,6 +294,39 @@ function sendDataWithAjax(){
 	}
     });
 }
+
+function contains(haystack, needle) {
+    return (String(haystack).toLowerCase().indexOf(String(needle).toLowerCase()) > -1);
+}
+
+// extended filter possibilities
+$.fn.dataTable.ext.search.push(
+    function(settings, data, dataIndex) {
+        
+        var search = searchField().val();
+        var rowData = $("#sentenceTable").DataTable().data()[dataIndex];
+
+        // console.log("Search for " + search + " in " + rowData);
+        
+        if(contains(rowData.pubmedID, search)) return true;
+        // if(contains(rowData.literal, search)) return true;
+        if(contains(rowData.comment, search)) return true;
+        
+        for(var i = 0; i < rowData.entities.length; i++) {
+            if(contains(rowData.entities[i].type, search)) return true;
+            if(contains(rowData.entities[i].name, search)) return true;
+            if(contains(rowData.entities[i].software, search)) return true;
+            if(contains(rowData.entities[i].comment, search)) return true;
+        }
+        
+        for(var i = 0; i < rowData.interactions.length; i++) {
+            if(contains(rowData.interactions[i].type, search)) return true;
+            if(contains(rowData.interactions[i].comment, search)) return true;
+        }
+        
+        return false;
+    }
+);
 
 $(function() {
     populateSentenceList();

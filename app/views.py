@@ -143,10 +143,10 @@ def download(xml):
 	""" build response to force download """
 	filename = generate_export_filename()
 	# We need to modify the response, so the first thing we 
-    # need to do is create a response out of the XML string
+	# need to do is create a response out of the XML string
 	response = make_response(xml)
-    # This is the key: Set the right header for the response
-    # to be downloaded, instead of just printed on the browser
+	# This is the key: Set the right header for the response
+	# to be downloaded, instead of just printed on the browser
 	response.headers["Content-Disposition"] = "attachment; filename=%s" % (filename)
 	return response
 
@@ -205,9 +205,9 @@ def createBlock(blockLines):
 				i = Interaction(type = type, start = start, end = end, sentence = s, grade = defaultGrade, comment = defaultComment)
 				db.session.add(i)
 			else:
-				type, software = typeSoftware(kind)
+				type, software = typeSoftware(kind.replace("GO_PROCESS", "GO-PROCESS").replace("CHEM", "CHEMICAL"))
 
-				if software.upper() == "EXACT":
+				if type.upper() != "PROTEIN" or software.upper() == "EXACT":
 					start, end = startEnd(lineComponents[1])
 					name = lineComponents[2]
 					databaseID = lineComponents[3]
@@ -242,11 +242,11 @@ def createBlock(blockLines):
 
 def startEnd(s):
 	se = s.split(" ")
-	return se[0], se[1]
+	return int(se[0]), int(se[1])
 
 def typeSoftware(s):
 	ts = s.split("_")
-	return ts[0].lower().title(), ts[1].lower().title()
+	return ts[0].lower().title(), (ts[1].lower().title() if len(ts) == 2 else "")
 
 def decode(s):
 	return s.encode('utf-8','ignore').decode('ascii','ignore').strip()

@@ -13,8 +13,8 @@ class Keyword(db.Model):
 class Entity(Keyword):
     __tablename__ = "entity"
     
-    type = db.Column(db.Enum("Protein", "Disease", "Biological Process", "Chemical"))
-    software = db.Column(db.Enum("Genia", "Reflect", "Exact"))
+    type = db.Column(db.Enum("Protein", "Disease", "Go-Process", "Chemical"))
+    software = db.Column(db.Enum("Genia", "Reflect", "Exact", ""))
     name = db.Column(db.String(100))
     databaseID = db.Column(db.String(50))
     

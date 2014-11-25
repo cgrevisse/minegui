@@ -52,3 +52,11 @@
 	text-align: left!important;
 }
 
+/* Label colours */
+.label-pattern { background-color: #d9534f; }
+.label-protein { background-color: #5cb85c; }
+.label-go-process { background-color: #ffa500; }
+.label-chemical { background-color: #8b4513; }
+.label-disease { background-color: #008b8b; }
+
+.label a { color: #ffffff; }

@@ -155,7 +155,7 @@ def download(xml):
 
 def importDataFromFile(inputFile, numberOfWorkerThreads = 10):
 	with open(inputFile, 'r', encoding = 'utf8') as input:
-		lines = [line.encode('ascii', 'ignore').decode('ascii').strip() for line in input.readlines()]
+		lines = [line.encode('utf8', 'ignore').decode('utf8').strip() for line in input.readlines()]
 
 		currentBlockLines = []
 		allBlockLines = []

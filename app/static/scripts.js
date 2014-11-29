@@ -224,8 +224,11 @@ function addGradeDialogButtonOnClickListener(){
             data: {},
             dataType: 'json',
             success: function(data) {
-            
-                var html='<div class="modal fade" id="curateModal" tabindex="-1" role="dialog">';
+				var html='<div class="modal fade" id="curateModal" tabindex="-1" role="dialog">';
+				html+='<div class="annotationpopup" id="annotationpopupid">';
+				html+='<div id="annotationcontainer"></div>';
+				html+='</div>';
+				html+='<div id="overlay"></div>';
                 html+='	    <div id="gradedialogwidth" class="modal-dialog">';
                 html+='		<div class="modal-content">';
                 html+='		    <div class="modal-header">';
@@ -244,6 +247,8 @@ function addGradeDialogButtonOnClickListener(){
                 html+='						<th>Pattern</th>';
                 html+='						<th>Grade</th>';
                 html+='						<th>Comment</th>';
+				html+='						<th>Annotations</th>';
+				
                 html+='					</tr>';
                 html+='				</thead>';
                 html+='				<tbody>';
@@ -263,9 +268,33 @@ function addGradeDialogButtonOnClickListener(){
                         html+='						<td>'+this.name+'</td>';
                         html+='						<td><input name="EntityGrade_'+i+'" type="range" value="'+this.grade+'" id="Entityrange'+this.id+'"><div class="rateit" data-rateit-backingfld="#Entityrange'+this.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
                         html+='						<td><textarea name="EntityComment_'+i+'" class="form-control" rows="1" id="EntityComment_'+i+'">'+this.comment+'</textarea></td>';
-                        html+='					</tr>';
+                        html+='						<td><div id="ontologyAnnotationDiv_'+this.id+'">';
+						html+='				<table id="annotationtable'+this.id+'" class="table table-striped">';
+						html+='				<thead>';
+						/*html+='					<tr>';
+						html+='						<th>Urn</th>';
+						html+='						<th>Identifier</th>';
+						html+='						<th>Default</th>';
+						html+='						<th></th>';
+						html+='					</tr>';*/
+						html+='				</thead>';
+						html+='				<tbody>';
+						$.each(this.ontologyAnnotations,function(){
+							html+='					<tr id="annotationrow'+this.id+'">';
+							html+='						<td>'+this.urn+'</td>';
+							html+='						<td>'+this.identifier+'</td>';
+							html+='						<td>'+this.default+'</td>';
+							html+='						<td><button type="button" name="ontologyannotationRemove_'+this.id+'" class="close" data-ontologyannotationid="'+this.id+'"><span aria-hidden="true">&times;</span><span class="sr-only">Remove</span></button></td>';
+							html+='					</tr>';
+						});
+						html+='				</tbody>';
+						html+='				</table>';
+						html+='</div>';
+						html+='<div><button name="EntityAddAnnotationButton'+this.id+'" type="button" class="btn btn-success" data-entityid="'+this.id+'">Add Annotation</button></div></td>';
+						html+='					</tr>';
                         i=i+1;
                 });
+				
                 i=0;
                 html+='<input type="hidden" name="entity_num" value="'+data.entities.length+'"/>';
                 $.each(data.interactions, function() {
@@ -295,11 +324,19 @@ function addGradeDialogButtonOnClickListener(){
                 updateOntologyLinks();
                 $('#gradedialogwidth').css({
                     'width': function () { 
-                    return ($(document).width() * .5) + 'px';  
+                    return ($(document).width() * .7) + 'px';  
                 }
                 });
+				addAnnotationPopupButtonOnClickListener();
+				removeAnnotationButtonOnClickListener();
+				//hide annotation popup if curate popup was closed
+				/*$('#curateModal').on('hidden.bs.modal',function(e){
+					$('#annotationpopupid').hide();
+					
+				});*/
                 $('#curateModal').modal('show');
-                    
+				
+          
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 console.log("Error " + xhr.status + ": " + thrownError);
@@ -327,6 +364,141 @@ function sendDataWithAjax(){
             var rowData = row.data();
             rowData["grade"] = data.grade;
             $("#sentenceTable").dataTable().fnSort([[3,'desc']]);
+			
+	}
+    });
+}
+
+function removeAnnotationButtonOnClickListener(){
+	$('button[name^=ontologyannotationRemove]').click(function () {
+		var ontologyannotationid = jQuery(this).data('ontologyannotationid');
+		$.ajax({
+			url: '/removeOntologyAnnotation/' + ontologyannotationid,
+			type: "get",
+			data:{}, 
+			dataType: 'json',
+			success: function(data) {
+				var table = document.getElementById('annotationtable'+data.entity_id);
+				var row = document.getElementById('annotationrow'+data.id);
+				table.deleteRow(row.rowIndex);
+			}
+		});
+	});
+}
+function addAnnotationPopupButtonOnClickListener(){
+	//close popup if user clicks on overlay div
+	$("#overlay").click(function(){
+		$('#annotationpopupid').fadeOut();
+		$('#overlay').fadeOut();
+	});
+	$('button[name^=EntityAddAnnotationButton]').click(function () {
+		var entityId = jQuery(this).data('entityid');
+		 $.ajax({
+            url: '/ontologyDBs',
+            type: 'GET',
+            data: {},
+            dataType: 'json',
+            success: function(data) {
+				
+				
+				var html='		<div class="modal-content">';
+				html+='		    <div class="modal-header">';
+				html+='			<button type="button" id="closeannotationpopup" class="close"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>';
+				html+='			<h4 class="modal-title">Feedback form</h4>';
+				html+='		    </div>';
+				html+='<div class="modal-body">';
+				html+='<form id="annotationForm" enctype="multipart/form-data">';
+				html+='				<table class="table table-striped">';
+                html+='				<thead>';
+                html+='					<tr>';
+                html+='						<th>Database</th>';
+                html+='						<th>Identifier</th>';
+                html+='						<th>Default</th>';
+                html+='					</tr>';
+                html+='				</thead>';
+                html+='				<tbody>';
+				html+='					<tr>';
+                html+='						<td><input type="hidden" name="entityID" value="'+entityId+'"/><select name="databaseURN" id="ontologyDBdropdown"></select></td>';
+                html+='						<td><input name="identifier" type="text" required></input></td>';
+                html+='						<td><input name="default" type="checkbox" value="1"></td>';
+                html+='					</tr>';
+				html+='				</tbody>';
+                html+='				</table>			';
+				html+='</form>';
+				html+='		    </div>';
+				html+='			<div class="modal-footer">';
+				html+='				<button id="closeannotationpopup2" type="button" class="btn btn-danger">Cancel</button>';
+				html+='			    <button type="button" onclick="addAnnotationWithAjax()" class="btn btn-success">Add annotation</button>';
+				html+='			</div>';
+				html+='		    </div>';
+				$('#annotationcontainer').html(html);
+				var ontologyDBdropdown = $("#ontologyDBdropdown");
+				$.each( data, function( key, value ) {
+					ontologyDBdropdown.append($("<option />").val(key).text(value));
+				});
+				//display popup
+				$('#annotationpopupid').fadeIn();
+				$('#overlay').fadeIn();
+				var topmargin = ($('#annotationpopupid').height() + 10) / 2;
+				var leftmargin = ($('#annotationpopupid' ).width() + 10) / 2;
+				$('#annotationpopupid').css({
+					'margin-top' : -topmargin,
+					'margin-left' : -leftmargin
+				});
+		
+				//close popup if button is clicked
+				$('#closeannotationpopup').click(function(){
+					$('#annotationpopupid').fadeOut();
+					$('#overlay').fadeOut();
+				});
+				$('#closeannotationpopup2').click(function(){
+					$('#annotationpopupid').fadeOut();
+					$('#overlay').fadeOut();
+				});
+			},
+			error: function (xhr, ajaxOptions, thrownError) {
+                console.log("Error " + xhr.status + ": " + thrownError);
+            }
+        });    
+    });
+}
+
+function addAnnotationWithAjax(){
+    $.ajax({
+	url: "/addOntologyAnnotation",
+	type: "post",
+	data: $('#annotationForm').serialize(),
+	dataType: 'json',
+    success: function(data) {
+        $('#annotationpopupid').fadeOut();
+		$('#overlay').fadeOut();
+		var table = document.getElementById('annotationtable'+data.entity_id);
+		var row = table.insertRow(table.rows.length);
+		row.id='annotationrow'+data.id;
+
+		var cell1 = row.insertCell(0);
+		var cell2 = row.insertCell(1);
+		var cell3 = row.insertCell(2);
+		var cell4 = row.insertCell(3);
+
+		cell1.innerHTML = data.urn;
+		cell2.innerHTML = data.identifier;
+		cell3.innerHTML = data.default;
+		cell4.innerHTML = '<button type="button" name="ontologyannotationRemove_'+data.id+'" class="close" data-ontologyannotationid="'+data.id+'"><span aria-hidden="true">&times;</span><span class="sr-only">Remove</span></button>';
+		$('button[name=ontologyannotationRemove_'+data.id+']').click(function () {
+			var ontologyannotationid = jQuery(this).data('ontologyannotationid');
+			$.ajax({
+				url: '/removeOntologyAnnotation/' + ontologyannotationid,
+				type: "get",
+				data:{}, 
+				dataType: 'json',
+				success: function(data) {
+					var table = document.getElementById('annotationtable'+data.entity_id);
+					var row = document.getElementById('annotationrow'+data.id);
+					table.deleteRow(row.rowIndex);
+				}
+			});
+		});
 	}
     });
 }

@@ -201,8 +201,12 @@ def deleteOntologyAnnotation(id):
 
 def importDataFromFile(inputFile):
 	with open(inputFile, 'r', encoding = 'utf8') as input:
+<<<<<<< HEAD
+		lines = [line.encode('utf8', 'ignore').decode('utf8').strip() for line in input.readlines()]
+=======
 		coding = 'utf8' # 'ascii'
 		lines = [line.encode(coding, 'ignore').decode(coding).strip() for line in input.readlines()]
+>>>>>>> b59b8e14401fa77e8f6974f5b4f0c2c0db7458fe
 
 		currentBlockLines = []
 		allBlockLines = []

@@ -4,6 +4,7 @@ from app.models import Sentence, Entity, Interaction, OntologyAnnotation, ontolo
 from json import dumps
 from .xmllib import dict2xmlstring
 import os, sys, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
+import xml.dom.minidom
 
 inputFilesDir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'inputFiles')
 allowedFileExtensions = ['txt']
@@ -133,7 +134,7 @@ def export_all():
 	data = []
 	for s in Sentence.query.all():
 		sdict = s.__dict__
-		print(sdict)
+		#print(sdict)
 		del sdict['_sa_instance_state']
 		sdict = eval(repr(sdict))
 		data.append(sdict)
@@ -147,12 +148,16 @@ def generate_export_filename():
 	ts = time.time()
 	return datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d_%H:%M:%S_export.xml')
 
-def download(xml):
+def download(xmlString):
 	""" build response to force download """
 	filename = generate_export_filename()
+	
+	# pretty print
+	xmlString = xml.dom.minidom.parseString(xmlString).toprettyxml()
+	
 	# We need to modify the response, so the first thing we 
 	# need to do is create a response out of the XML string
-	response = make_response(xml)
+	response = make_response(xmlString)
 	# This is the key: Set the right header for the response
 	# to be downloaded, instead of just printed on the browser
 	response.headers["Content-Disposition"] = "attachment; filename=%s" % (filename)

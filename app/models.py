@@ -52,12 +52,15 @@ class OntologyAnnotation(db.Model):
     def uri(self):
         url = "http://www.ebi.ac.uk/miriamws/main/rest/resolve/{}:{}".format(self.urn, self.identifier)
         
-        f = urllib.request.urlopen(url)
-        root = ET.fromstring(html.unescape(f.read().decode('utf-8')))
-        
-        for uri in root.iter('uri'):
-            if(not ("deprecated" in uri.attrib and uri.attrib["deprecated"] == "true") and ("type" in uri.attrib and uri.attrib["type"] == "URL")):
-                return uri.text
+        try:
+            f = urllib.request.urlopen(url)
+            root = ET.fromstring(html.unescape(f.read().decode('utf-8')))
+            
+            for uri in root.iter('uri'):
+                if(not ("deprecated" in uri.attrib and uri.attrib["deprecated"] == "true") and ("type" in uri.attrib and uri.attrib["type"] == "URL")):
+                    return uri.text
+        except urllib.error.HTTPError:
+            pass
 
         return ""
     
@@ -65,6 +68,7 @@ class OntologyAnnotation(db.Model):
     def serialize(self):
         return {
             'id': self.id,
+            'dbName': ontologyDBs[self.urn],
             'urn': self.urn,
             'identifier': self.identifier,
             'default': self.default,
@@ -127,7 +131,7 @@ class Entity(Keyword):
             'grade': self.grade,
             'comment': self.comment,
             'ontologyAnnotations': [oa.serialize for oa in self.ontologyAnnotations],
-			#'ontologyLink': self.ontologyLink, 
+            'ontologyLink': self.ontologyLink, 
             'sentence_id': self.sentence_id
         }
     

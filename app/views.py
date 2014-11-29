@@ -1,10 +1,9 @@
 from flask import render_template, request, jsonify, make_response, url_for, redirect
 from app import app, db
-from app.models import Sentence, Entity, Interaction
+from app.models import Sentence, Entity, Interaction, OntologyAnnotation, ontologyDBs
 from json import dumps
 from .xmllib import dict2xmlstring
 import os, sys, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
-
 
 inputFilesDir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'inputFiles')
 allowedFileExtensions = ['txt']
@@ -12,41 +11,34 @@ allowedFileExtensions = ['txt']
 defaultGrade = 0
 defaultComment = ""
 
+
+# Main page
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
 	if request.method == 'POST':
 		file = request.files['importFileInput']
 		if file and file.filename.rsplit('.', 1)[1] in allowedFileExtensions:
+			
+			# create input files directory
+			if not os.path.exists(inputFilesDir):
+				os.makedirs(inputFilesDir)
+			
 			path = os.path.join(inputFilesDir, file.filename)
 			file.save(path)
 			importDataFromFile(path)
+			
+			# cleanup
+			try:
+				os.remove(path)
+				os.removedirs(inputFilesDir)
+			except OSError:
+				pass
 	
 	return render_template('index.html')
 
-@app.route('/feedback/', methods=['GET', 'POST'])
-def saveFeedback():
-	print("works")
-	if request.method == 'POST':
-		print("redirecting")
-		entityNum=int(request.form['entity_num'])
-		for i in range(entityNum):
-			entity = Entity.query.get(int(request.form['EntityID_'+str(i)]))
-			entity.grade=int(request.form['EntityGrade_'+str(i)])
-			entity.comment=request.form['EntityComment_'+str(i)]
-		interactionNum=int(request.form['interaction_num'])
-		for i in range(interactionNum):
-			interaction= Interaction.query.get(int(request.form['InteractionID_'+str(i)]))
-			interaction.grade=int(request.form['InteractionGrade_'+str(i)])
-			interaction.comment=request.form['InteractionComment_'+str(i)]
-		sentence=Sentence.query.get(int(request.form['SentenceID']))
-		sentence.grade=request.form['SentenceGrade']
-		sentence.comment=request.form['SentenceComment']
-		db.session.commit()
-		return dumps(sentence.serialize)
-	else:
-		return redirect(url_for('index'))
 
-# REST Interface
+# Rest Interface
 
 @app.route('/sentences/')
 def sentences():
@@ -56,36 +48,6 @@ def sentences():
 @app.route('/sentences/<int:id>')
 def sentence(id):
 	return dumps(Sentence.query.get(id).serialize)
-
-# Export and Import
-@app.route('/export/')
-def export_all():
-	data = []
-	for s in Sentence.query.all():
-		sdict = s.__dict__
-		print(sdict)
-		del sdict['_sa_instance_state']
-		sdict = eval(repr(sdict))
-		data.append(sdict)
-	# Delete ORM specific attribute
-	xml = dict2xmlstring(data)
-	return download(xml)
-
-
-@app.route('/export/<int:id>')
-def export_single(id):
-	data = Sentence.query.get(id).__dict__
-	# Delete ORM specific attribute
-	del data['_sa_instance_state']
-	data = eval(repr(data))
-	xml = dict2xmlstring(data)
-	return download(xml)
-
-
-@app.route('/test')
-def test():
-	"""Sandbox for testing purposes."""
-	return ""
 
 @app.route('/sentences/<int:id>/metadata')
 def getMetadata(id):
@@ -133,6 +95,52 @@ def getMetadata(id):
 		
 	return dumps({ 'title': title, 'authors': authors, 'journal': journal, 'year': year, 'abstract': abstract, 'doi': doi, 'pmid': s.pubmedID })
 
+@app.route('/feedback/', methods=['GET', 'POST'])
+def saveFeedback():
+	if request.method == 'POST':
+		entityNum=int(request.form['entity_num'])
+		for i in range(entityNum):
+			entity = Entity.query.get(int(request.form['EntityID_'+str(i)]))
+			entity.grade=int(request.form['EntityGrade_'+str(i)])
+			entity.comment=request.form['EntityComment_'+str(i)]
+		interactionNum=int(request.form['interaction_num'])
+		for i in range(interactionNum):
+			interaction= Interaction.query.get(int(request.form['InteractionID_'+str(i)]))
+			interaction.grade=int(request.form['InteractionGrade_'+str(i)])
+			interaction.comment=request.form['InteractionComment_'+str(i)]
+		sentence=Sentence.query.get(int(request.form['SentenceID']))
+		sentence.grade=request.form['SentenceGrade']
+		sentence.comment=request.form['SentenceComment']
+		db.session.commit()
+		return dumps(sentence.serialize)
+	else:
+		return redirect(url_for('index'))
+
+
+# Export
+
+@app.route('/export/<int:id>')
+def export_single(id):
+	data = Sentence.query.get(id).__dict__
+	# Delete ORM specific attribute
+	del data['_sa_instance_state']
+	data = eval(repr(data))
+	xml = dict2xmlstring(data)
+	return download(xml)
+
+@app.route('/export/')
+def export_all():
+	data = []
+	for s in Sentence.query.all():
+		sdict = s.__dict__
+		print(sdict)
+		del sdict['_sa_instance_state']
+		sdict = eval(repr(sdict))
+		data.append(sdict)
+	# Delete ORM specific attribute
+	xml = dict2xmlstring(data)
+	return download(xml)
+
 def generate_export_filename():
 	import datetime
 	import time
@@ -151,11 +159,54 @@ def download(xml):
 	return response
 
 
-# Helper methods for data import
+# Ontologies
 
-def importDataFromFile(inputFile, numberOfWorkerThreads = 10):
+@app.route('/ontologyDBs')
+def allOntologyDBs():
+	return dumps(ontologyDBs)
+
+@app.route('/addOntologyAnnotation', methods=['GET', 'POST'])
+def addOntologyAnnotation():
+	if request.method == 'POST':
+		
+		entityID = int(request.form['entityID'])
+		databaseURN = request.form['databaseURN']
+		identifier = request.form['identifier']
+		default = bool(int(request.form['default']))
+		
+		entity = Entity.query.get(entityID)
+		
+		# if first ontology annotation for this entity, make it default
+		if len(entity.ontologyAnnotations) == 0:
+			default = True
+		
+		# if new ontology annotation should be default, set default to false for all previous ones
+		if default:
+			for oa in entitiy.ontologyAnnotations:
+				oa.default = False
+		
+		o = OntologyAnnotation(urn = databaseURN, identifier = identifier, default = default, entity = entity)
+		
+		db.session.add(o)
+		db.session.commit()
+		
+@app.route('/removeOntologyAnnotation/<int:id>')
+def deleteOntologyAnnotation(id):
+	o = OntologyAnnotation.query.get(id)
+	db.session.delete(o)
+	db.session.commit()
+
+
+# Import
+
+def importDataFromFile(inputFile):
 	with open(inputFile, 'r', encoding = 'utf8') as input:
+<<<<<<< HEAD
 		lines = [line.encode('utf8', 'ignore').decode('utf8').strip() for line in input.readlines()]
+=======
+		coding = 'utf8' # 'ascii'
+		lines = [line.encode(coding, 'ignore').decode(coding).strip() for line in input.readlines()]
+>>>>>>> b59b8e14401fa77e8f6974f5b4f0c2c0db7458fe
 
 		currentBlockLines = []
 		allBlockLines = []
@@ -170,8 +221,6 @@ def importDataFromFile(inputFile, numberOfWorkerThreads = 10):
 
 		for block in allBlockLines:
 			createBlock(block)
-		
-		print("Import done!")
 	
 def createBlock(blockLines):
 	headLineComponents = blockLines[0].split("\t")

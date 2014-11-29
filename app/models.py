@@ -1,4 +1,75 @@
 from app import db
+import urllib, html, xml.etree.ElementTree as ET
+
+ontologyDBs = {
+	'urn:miriam:cas' : 'Chemical Abstracts Service', 
+	'urn:miriam:obo.chebi' : 'Chebi', 
+	'urn:miriam:chembl.compound' : 'ChEMBL', 
+	'urn:miriam:chembl.target' : 'ChEMBL target', 
+	'urn:miriam:drugbank' : 'DrugBank', 
+	'urn:miriam:drugbankv4.target' : 'DrugBank Target v4', 
+	'urn:miriam:ec-code' : 'Enzyme Nomenclature', 
+	'urn:miriam:ensembl' : 'Ensembl', 
+	'urn:miriam:ncbigene' : 'Entrez Gene', 
+	'urn:miriam:obo.go' : 'Gene Ontology', 
+	'urn:miriam:hgnc' : 'HGNC', 
+	'urn:miriam:hgnc.symbol' : 'HGNC Smbol', 
+	'urn:miriam:hmdb' : 'HMDB', 
+	'urn:miriam:interpro' : 'InterPro', 
+	'urn:miriam:kegg.compound' : 'Kegg Compound', 
+	'urn:miriam:kegg.genes' : 'Kegg Genes', 
+	'urn:miriam:kegg.pathway' : 'Kegg Pathway', 
+	'urn:miriam:kegg.reaction' : 'Kegg Reaction', 
+	'urn:miriam:mesh.2012' : 'MeSH 2012', 
+	'urn:miriam:mgd' : 'Mouse Genome Database', 
+	'urn:miriam:panther.family' : 'PANTHER Family', 
+	'urn:miriam:pharmgkb.pathways' : 'PharmGKB Pathways', 
+	'urn:miriam:pubchem.compound' : 'PubChem-compound', 
+	'urn:miriam:pubchem.substance' : 'PubChem-substance', 
+	'urn:miriam:pubmed' : 'PubMed', 
+	'urn:miriam:reactome' : 'Reactome', 
+	'urn:miriam:refseq' : 'RefSeq', 
+	'urn:miriam:taxonomy' : 'Taxonomy', 
+	'urn:miriam:uniprot' : 'Uniprot', 
+	'urn:miriam:wikipathways' : 'WikiPathways', 
+	'urn:miriam:wikipedia.en' : 'Wikipedia (English)'
+}
+
+class OntologyAnnotation(db.Model):
+    __tablename__ = "ontologyAnnotation"
+    
+    id = db.Column(db.Integer, primary_key = True)
+    urn = db.Column(db.String(100))
+    identifier = db.Column(db.String(100))
+    default = db.Column(db.Boolean)
+    
+    entity_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
+    
+    def __repr__(self):
+        return str(self.serialize)
+    
+    @property
+    def uri(self):
+        url = "http://www.ebi.ac.uk/miriamws/main/rest/resolve/{}:{}".format(self.urn, self.identifier)
+        
+        f = urllib.request.urlopen(url)
+        root = ET.fromstring(html.unescape(f.read().decode('utf-8')))
+        
+        for uri in root.iter('uri'):
+            if(not ("deprecated" in uri.attrib and uri.attrib["deprecated"] == "true") and ("type" in uri.attrib and uri.attrib["type"] == "URL")):
+                return uri.text
+
+        return ""
+    
+    @property
+    def serialize(self):
+        return {
+            'id': self.id,
+            'urn': self.urn,
+            'identifier': self.identifier,
+            'default': self.default,
+            'entity_id': self.entity_id
+        }
 
 class Keyword(db.Model):
     __abstract__ = True
@@ -20,9 +91,29 @@ class Entity(Keyword):
     
     sentence_id = db.Column(db.Integer, db.ForeignKey('sentence.id'))
     
+    ontologyAnnotations = db.relationship('OntologyAnnotation', backref = 'entity', lazy = "joined") # join_depth=2 
+    
     def __repr__(self):
         return str(self.serialize)
     
+    @property
+    def ontologyLink(self):
+        
+        if len(self.ontologyAnnotations) == 0:
+            return ""
+        
+        annotation = None
+        
+        for oa in self.ontologyAnnotations:
+            if oa.default:
+                annotation = oa
+                break
+            
+        if annotation == None:
+            annotation = self.ontologyAnnotations[0]
+            
+        return annotation.uri
+
     @property
     def serialize(self):
         return {
@@ -35,6 +126,7 @@ class Entity(Keyword):
             'end': self.end,
             'grade': self.grade,
             'comment': self.comment,
+            'ontologyAnnotations': [oa.serialize for oa in self.ontologyAnnotations],
             'sentence_id': self.sentence_id
         }
     

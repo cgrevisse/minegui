@@ -168,45 +168,47 @@ def allOntologyDBs():
 @app.route('/addOntologyAnnotation', methods=['GET', 'POST'])
 def addOntologyAnnotation():
 	if request.method == 'POST':
-		
+		print("hello")
 		entityID = int(request.form['entityID'])
 		databaseURN = request.form['databaseURN']
 		identifier = request.form['identifier']
-		default = bool(int(request.form['default']))
 		
 		entity = Entity.query.get(entityID)
 		
+		default=False
 		# if first ontology annotation for this entity, make it default
 		if len(entity.ontologyAnnotations) == 0:
 			default = True
 		
+		if 'default' in request.form:
+			default = True
 		# if new ontology annotation should be default, set default to false for all previous ones
 		if default:
-			for oa in entitiy.ontologyAnnotations:
+			for oa in entity.ontologyAnnotations:
 				oa.default = False
 		
 		o = OntologyAnnotation(urn = databaseURN, identifier = identifier, default = default, entity = entity)
 		
 		db.session.add(o)
 		db.session.commit()
+		return dumps(o.serialize)
 		
 @app.route('/removeOntologyAnnotation/<int:id>')
 def deleteOntologyAnnotation(id):
 	o = OntologyAnnotation.query.get(id)
 	db.session.delete(o)
 	db.session.commit()
+	return dumps(o.serialize)
 
 
 # Import
 
 def importDataFromFile(inputFile):
 	with open(inputFile, 'r', encoding = 'utf8') as input:
-<<<<<<< HEAD
-		lines = [line.encode('utf8', 'ignore').decode('utf8').strip() for line in input.readlines()]
-=======
 		coding = 'utf8' # 'ascii'
 		lines = [line.encode(coding, 'ignore').decode(coding).strip() for line in input.readlines()]
->>>>>>> b59b8e14401fa77e8f6974f5b4f0c2c0db7458fe
+		currentBlockLines = []
+		allBlockLines = []
 
 		currentBlockLines = []
 		allBlockLines = []

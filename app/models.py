@@ -127,6 +127,7 @@ class Entity(Keyword):
             'grade': self.grade,
             'comment': self.comment,
             'ontologyAnnotations': [oa.serialize for oa in self.ontologyAnnotations],
+			#'ontologyLink': self.ontologyLink, 
             'sentence_id': self.sentence_id
         }
     

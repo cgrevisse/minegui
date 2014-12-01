@@ -94,7 +94,7 @@ def getMetadata(id):
 		except:
 			pass
 		
-	return dumps({ 'title': title, 'authors': authors, 'journal': journal, 'year': year, 'abstract': abstract, 'doi': doi, 'pmid': s.pubmedID })
+	return dumps({ 'title': title, 'authors': authors, 'journal': journal, 'year': year, 'abstract': abstract, 'doi': doi, 'pmid': s.pubmedID, 'sentenceID': s.sentenceID })
 
 @app.route('/feedback/', methods=['GET', 'POST'])
 def saveFeedback():

@@ -93,6 +93,7 @@ function loadMetaData(id) {
         dataType: 'json',
         success: function(data) {
             $("#metaDataPubMedID").attr("href", "http://www.ncbi.nlm.nih.gov/pubmed/?term=" + data.pmid).text(data.pmid);
+            $("#metaDataSentenceID").html(data.sentenceID);
             $("#metaDataDOI").attr("href", "http://dx.doi.org/" + data.doi).text(data.doi);
             $("#metaDataTitle").text(data.title);
             $("#metaDataAuthors").text(data.authors.join("; "));
@@ -161,7 +162,7 @@ function populateSentenceList() {
             }
         ],
         "order": [[ 3, "desc" ]],
-        "paging":false,
+        //"paging":false,
         "fnDrawCallback": function(oSettings) { // fnInitComplete
             // display grading stars
             $(".rateit").rateit();
@@ -171,25 +172,6 @@ function populateSentenceList() {
             
             // make search field a little prettier
             searchField().addClass("form-control").attr("placeholder", "Filter ...");
-            
-            // delay search until 3 characters entered
-            /*
-            var dtable = $("#sentenceTable").dataTable().api();
-            searchField()
-                .unbind() // Unbind previous default bindings
-                .bind("keyup", function(event) { // Bind our desired behavior
-                    // If (the length is 3 or more characters, or) the user pressed ENTER, search
-                    if(event.keyCode == 13) {
-                        // Call the API search function
-                        dtable.search(this.value).draw();
-                    }
-                    // Ensure we clear the search if they backspace far enough
-                    if(this.value == "") {
-                        dtable.search("").draw();
-                    }
-                    return;
-                });
-            */
             
             // truncating mechanism
             $('.sentenceLine').click(function() {  
@@ -211,7 +193,7 @@ function populateSentenceList() {
             searchField().focus();
         },
         "oLanguage": { "sSearch": "" }
-    });
+    }).fnFilterOnReturn();
 }
 
 function addGradeDialogButtonOnClickListener(){
@@ -535,6 +517,27 @@ $.fn.dataTableExt.afnFiltering.push(
         return false;
     }
 );
+
+// delay search until 3 characters entered
+jQuery.fn.dataTableExt.oApi.fnFilterOnReturn = function (oSettings) {
+    var _that = this;
+ 
+    this.each(function (i) {
+        $.fn.dataTableExt.iApiIndex = i;
+        var $this = this;
+        var anControl = $('input', _that.fnSettings().aanFeatures.f);
+        anControl
+            .unbind('keyup search input')
+            .bind('keyup', function (e) {
+                if(e.which == 13 || anControl.val().length >= 3 || anControl.val().length == 0) { 
+                    $.fn.dataTableExt.iApiIndex = i;
+                    _that.fnFilter(anControl.val());
+                }
+            });
+        return this;
+    });
+    return this;
+};
 
 $(function() {
     populateSentenceList();

@@ -1,13 +1,13 @@
 from flask import render_template, request, jsonify, make_response, url_for, redirect
 from app import app, db
-from app.models import Sentence, Entity, Interaction, OntologyAnnotation, ontologyDBs
+from app.models import Sentence, Entity, Interaction, OntologyAnnotation, EnsemblHGNCMap, ontologyDBs
 from json import dumps
 from .xmllib import dict2xmlstring
 import os, sys, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
 import xml.dom.minidom
 
 inputFilesDir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'inputFiles')
-allowedFileExtensions = ['txt']
+allowedFileExtensions = ['txt', 'xml']
 
 defaultGrade = 0
 defaultComment = ""
@@ -18,6 +18,8 @@ defaultComment = ""
 @app.route('/', methods=['GET', 'POST'])
 def index():
 	if request.method == 'POST':
+		format = request.form['format']
+		
 		file = request.files['importFileInput']
 		if file and file.filename.rsplit('.', 1)[1] in allowedFileExtensions:
 			
@@ -27,7 +29,7 @@ def index():
 			
 			path = os.path.join(inputFilesDir, file.filename)
 			file.save(path)
-			importDataFromFile(path)
+			importDataFromFile(path, format)
 			
 			# cleanup
 			try:
@@ -35,7 +37,7 @@ def index():
 				os.removedirs(inputFilesDir)
 			except OSError:
 				pass
-	
+			
 	return render_template('index.html')
 
 
@@ -96,6 +98,11 @@ def getMetadata(id):
 		
 	return dumps({ 'title': title, 'authors': authors, 'journal': journal, 'year': year, 'abstract': abstract, 'doi': doi, 'pmid': s.pubmedID, 'sentenceID': s.sentenceID })
 
+@app.route('/entity/<int:id>/links')
+def entityLinks(id):
+	entity = Entity.query.get(id)
+	return dumps(entity.links())
+
 @app.route('/feedback/', methods=['GET', 'POST'])
 def saveFeedback():
 	if request.method == 'POST':
@@ -134,7 +141,6 @@ def export_all():
 	data = []
 	for s in Sentence.query.all():
 		sdict = s.__dict__
-		#print(sdict)
 		del sdict['_sa_instance_state']
 		sdict = eval(repr(sdict))
 		data.append(sdict)
@@ -173,7 +179,6 @@ def allOntologyDBs():
 @app.route('/addOntologyAnnotation', methods=['GET', 'POST'])
 def addOntologyAnnotation():
 	if request.method == 'POST':
-		print("hello")
 		entityID = int(request.form['entityID'])
 		databaseURN = request.form['databaseURN']
 		identifier = request.form['identifier']
@@ -208,7 +213,7 @@ def deleteOntologyAnnotation(id):
 
 # Import
 
-def importDataFromFile(inputFile):
+def corpusImport(inputFile):
 	with open(inputFile, 'r', encoding = 'utf8') as input:
 		coding = 'utf8' # 'ascii'
 		lines = [line.encode(coding, 'ignore').decode(coding).strip() for line in input.readlines()]
@@ -228,6 +233,32 @@ def importDataFromFile(inputFile):
 
 		for block in allBlockLines:
 			createBlock(block)
+
+def xmlImport(inputFile):
+	'''
+	TODO Raphael
+	'''
+	pass
+
+def ensemblHGCNMapImport(inputFile):
+	with open(inputFile, 'r') as input:
+		lines = [line.strip() for line in input.readlines()[1:]] # header line included
+		
+		for line in lines:
+			(ensemblProteinID, hgncSymbol) = line.split("\t")
+			db.session.add(EnsemblHGNCMap(ensemblProteinID = ensemblProteinID, hgncSymbol = hgncSymbol))
+			
+		db.session.commit()
+
+def importDataFromFile(inputFile, format):
+	if format == 'corpus':
+		corpusImport(inputFile)
+	elif format == 'xml':
+		xmlImport(inputFile)
+	elif format == 'ensemblHGNCMap':
+		ensemblHGCNMapImport(inputFile)
+	else:
+		pass
 	
 def createBlock(blockLines):
 	headLineComponents = blockLines[0].split("\t")

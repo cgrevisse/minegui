@@ -35,6 +35,12 @@ ontologyDBs = {
 	'urn:miriam:wikipedia.en' : 'Wikipedia (English)'
 }
 
+class EnsemblHGNCMap(db.Model):
+    __tablename__ = "ensemblHGNCMap"
+
+    ensemblProteinID = db.Column(db.String(100), primary_key = True)
+    hgncSymbol = db.Column(db.String(100), primary_key = True)
+
 class OntologyAnnotation(db.Model):
     __tablename__ = "ontologyAnnotation"
     
@@ -48,9 +54,10 @@ class OntologyAnnotation(db.Model):
     def __repr__(self):
         return str(self.serialize)
     
-    @property
-    def uri(self):
+    def allURIs(self):
         url = "http://www.ebi.ac.uk/miriamws/main/rest/resolve/{}:{}".format(self.urn, self.identifier)
+        
+        uris = []
         
         try:
             f = urllib.request.urlopen(url)
@@ -58,11 +65,20 @@ class OntologyAnnotation(db.Model):
             
             for uri in root.iter('uri'):
                 if(not ("deprecated" in uri.attrib and uri.attrib["deprecated"] == "true") and ("type" in uri.attrib and uri.attrib["type"] == "URL")):
-                    return uri.text
+                    uris.append(uri.text)
         except urllib.error.HTTPError:
             pass
 
-        return ""
+        return uris
+    
+    @property
+    def uri(self):
+        uris = self.allURIs()
+        
+        if len(uris) > 0:
+            return uris[0]
+        else:
+            return ""
     
     @property
     def serialize(self):
@@ -134,6 +150,40 @@ class Entity(Keyword):
             'ontologyLink': self.ontologyLink, 
             'sentence_id': self.sentence_id
         }
+    
+    def createLinkDict(self, type, id, url, defaultAnnotation = False):
+        return { 'type': type, 'id': id, 'url': url, 'defaultAnnotation': defaultAnnotation }
+    
+    def links(self):
+        
+        databaseIDLinks = []
+        
+        # links based on databaseID
+        if self.type == "Protein":
+            # map ensembl to hgnc
+            mappings =  EnsemblHGNCMap.query.filter(EnsemblHGNCMap.ensemblProteinID == self.databaseID).all()
+            
+            for mapping in mappings:
+                databaseIDLinks.append(self.createLinkDict("HGNC", mapping.hgncSymbol, "http://www.genenames.org/cgi-bin/search?search_type=symbols&search={}".format(mapping.hgncSymbol)))
+        elif self.type == "Disease":
+            id = self.databaseID.replace('DOID:', '')
+            databaseIDLinks.append(self.createLinkDict("Disease", id, "http://disease-ontology.org/term/DOID%3A{}".format(id)))
+        elif self.type == "Go-Process":
+            databaseIDLinks.append(self.createLinkDict("Go-Process", self.databaseID, "http://www.ebi.ac.uk/QuickGO/GTerm?id={}".format(self.databaseID)))
+        elif self.type == "Chemical":
+            id = self.databaseID.replace("CID", "")
+            databaseIDLinks.append(self.createLinkDict("Chemical", id, "https://pubchem.ncbi.nlm.nih.gov/compound/{}".format(id)))
+        else:
+            pass
+
+        ownOntologyAnnotationLinks = []
+
+        # own annotations
+        for oa in self.ontologyAnnotations:
+            for uri in oa.allURIs():
+                ownOntologyAnnotationLinks.append(self.createLinkDict(ontologyDBs[oa.urn], oa.identifier, uri, defaultAnnotation = oa.default))
+            
+        return { 'dbLinks': databaseIDLinks, 'ownLinks': ownOntologyAnnotationLinks }
     
 class Interaction(Keyword):
     __tablename__ = "interaction"

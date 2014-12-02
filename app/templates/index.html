@@ -46,10 +46,21 @@
 						<h4 class="modal-title">Import data from file</h4>
 					    </div>
 					    
-					    <form enctype="multipart/form-data" action="{{ url_for('index') }}" method="post">
+					    <form enctype="multipart/form-data" action="{{ url_for('index') }}" method="post" role="form">
 					    	<div class="modal-body">
-						    <p class="help-block">Please select a text file to import. Only <code>.txt</code> files are accepted.</p>
-						    <input type="file" name="importFileInput" />
+						    <div class="form-group">
+							<label for="importFileFormat">File format:</label>
+							<select id="importFileFormat" name="format" class="form-control">
+							    <option value="corpus">Corpus</option>
+							    <option value="xml">XML</option>
+							    <option value="ensemblHGNCMap">Ensembl to HGNC mapping</option>
+							</select>
+						    </div>
+						    <div class="form-group">
+							<label for="importFileInput">File input:</label>
+							<input type="file" id="importFileInput" name="importFileInput" />
+							<p class="help-block">Please select a text file to import. Only <code>.txt</code> and <code>.xml</code> files are accepted.</p>
+						    </div>
 						</div>
 						<div class="modal-footer">
 						    <button type="submit" class="btn btn-success">Import ...</button>
@@ -94,7 +105,7 @@
                 <div class="col-lg-9">
                     <div class="panel panel-default">
 			<div class="panel-body">
-			    <div style="height: 600px !important; overflow: scroll;">
+			    <div style="/*height: 800px !important; overflow: scroll;*/">
 				<div class="table-responsive">
 				    <table class="display table table-striped" id="sentenceTable" cellspacing="0" width="100%">
 					<thead>
@@ -127,6 +138,7 @@
 	<script src="http://cdn.datatables.net/1.10.4/js/jquery.dataTables.min.js"></script>
 	<script src="/static/scripts.js"></script>
 	<script src="/static/jquery.loadie.min.js"></script>
+	<script src="/static/jquery.hovercard.min.js"></script>
 	<script src="/static/jquery.rateit.js"></script>
   </body>
 </html>

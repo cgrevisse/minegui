@@ -1,10 +1,11 @@
 //SentenceHighlight "object" created from entities or interactions
-function SentenceHighlight(start,end,type,color, databaseID) {
+function SentenceHighlight(start,end,type,color, databaseID, keywordID) {
     this.start = start;
     this.end = end;
     this.color = color;
     this.type = type;
     this.databaseID = databaseID;
+    this.keywordID = keywordID
 }
 
 //compare function for SentenceHighlight objects: criteria=start attribute
@@ -17,25 +18,61 @@ function compareStart(a,b) {
 }
 
 function updateOntologyLinks() {
-    $('.label-protein').each(function() {
-        var databaseID = $(this).attr('data-databaseID');
-        // TODO: Link proteins to HGNC ontology
-        // $(this).contents().wrap('<a href="http://www.genenames.org/' + databaseID + '" target="_blank"></a>');
-    });
-    
-    $('.label-disease').each(function() {
-        var databaseID = $(this).attr('data-databaseID').replace("DOID:", "");
-        $(this).contents().wrap('<a href="http://disease-ontology.org/term/DOID%3A' + databaseID + '" target="_blank"></a>');
-    });
-    
-    $('.label-go-process').each(function() {
-        var databaseID = $(this).attr('data-databaseID');
-        $(this).contents().wrap('<a href="http://www.ebi.ac.uk/QuickGO/GTerm?id=' + databaseID + '" target="_blank"></a>');
-    });
-    
-    $('.label-chemical').each(function() {
-        var databaseID = parseInt($(this).attr('data-databaseID').replace("CID", ""));
-        $(this).contents().wrap('<a href="https://pubchem.ncbi.nlm.nih.gov/compound/' + databaseID + '" target="_blank"></a>');
+    $('.label-entity').each(function() {
+        
+        var entityID = $(this).attr('data-id');
+        var selectorDistinguisher = $(this).hasClass('label-dataTable') ? 'dataTable' : 'modalDialog';
+        $(this).hovercard({
+            detailsHTML: '<div id="hoverCardDetails_' + selectorDistinguisher + '_' + entityID + '" style="margin-top:20px;"></div>',
+            width: 300,
+            onHoverIn: function() {
+                $.ajax({
+                    url: '/entity/' + entityID + '/links',
+                    type: 'GET',
+                    dataType: 'json',
+                    beforeSend: function() {
+                        // $('#hoverCardDetails_' + selectorDistinguisher + '_' + entityID).prepend('<p class="loading-text glyphicon glyphicon-refresh">Loading links ...</p>');
+                    },
+                    success: function(data) {
+                        $('#hoverCardDetails_' + selectorDistinguisher + '_' + entityID).empty();
+                        
+                        var dl = $("<dl>");
+                        
+                        if (data.dbLinks.length > 0) {
+                            var dt = $("<dt>" + data.dbLinks[0].type +"</dt>");
+                            var dd = $("<dd>");
+                            var ul = $('<ul class="list-unstyled">');
+                            
+                            dl.append(dt);
+                            dl.append(dd);
+                            dd.append(ul);
+                            
+                            $.each(data.dbLinks, function() {
+                                ul.append($('<li><a href="' + this.url + '" target="_blank">' + this.id + '</a></li>'));
+                            });
+                            
+                        }
+                        
+                        if (data.ownLinks.length > 0) {
+                            var dt = $("<dt>Own Ontology Annotations</dt>");
+                            var dd = $("<dd>");
+                            var ul = $('<ul class="list-unstyled">');
+                            
+                            dl.append(dt);
+                            dl.append(dd);
+                            dd.append(ul);
+                            
+                            $.each(data.ownLinks, function() {
+                                ul.append($('<li><span ' + (this.defaultAnnotation ? 'class="label label-default glyphicon glyphicon-ok-sign" style="font-weight:bold;"' : '') + '><a href="' + this.url + '" target="_blank">' + this.type + ' ' + this.id + '</a></span></li>'));
+                            });
+                        }
+                        
+                        $('.loading-text').remove();
+                        $('#hoverCardDetails_' + selectorDistinguisher + '_' + entityID).append(dl);
+                    }
+                });
+            }
+        });
     });
 }
 
@@ -43,10 +80,10 @@ function createHighlightedSentence(row) {
     
     var sentenceHighlightArray = [];
     $.each(row.entities, function() {
-        sentenceHighlightArray.push(new SentenceHighlight(parseInt(this.start), parseInt(this.end), this.type, "label label-" + this.type.toLowerCase(), this.databaseID));
+        sentenceHighlightArray.push(new SentenceHighlight(parseInt(this.start), parseInt(this.end), this.type, "label label-dataTable label-entity label-" + this.type.toLowerCase(), this.databaseID, this.id));
     });
     $.each(row.interactions, function() {
-        sentenceHighlightArray.push(new SentenceHighlight(parseInt(this.start), parseInt(this.end), this.type, "label label-pattern", ""));
+        sentenceHighlightArray.push(new SentenceHighlight(parseInt(this.start), parseInt(this.end), this.type, "label label-pattern", "", null));
     });
     
     // order entities and interactions by the start position
@@ -69,7 +106,7 @@ function createHighlightedSentence(row) {
             index = sh.start;
             popFromArray = false;
         } else if(index == sh.start) {
-            highlightedSentence = highlightedSentence + '<span title="' + sh.type + '"><span class="' + sh.color + '" data-databaseID="' + sh.databaseID + '">' + initialSentence.slice(sh.start, sh.end) + '</span></span>';
+            highlightedSentence = highlightedSentence + '<span title="' + sh.type + '"><span class="' + sh.color + '" '+(sh.keywordID != null ? 'data-id="'+sh.keywordID+'"' : '')+' data-databaseID="' + sh.databaseID + '">' + initialSentence.slice(sh.start, sh.end) + '</span></span>';
             index = sh.end;
             popFromArray = true;
         } else {
@@ -246,7 +283,7 @@ function addGradeDialogButtonOnClickListener(){
                 $.each(data.entities, function() {
                         html+='<input type="hidden" name="EntityID_'+i+'" value="'+this.id+'"/>';
                         html+='					<tr>';
-                        html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end)+'"><span class="label label-' + this.type.toLowerCase() + '" data-databaseID="'+this.databaseID+'">'+data.literal.slice(this.start,this.end)+'</span></span></td>';
+                        html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end)+'"><span data-id="'+this.id+'" class="label label-entity label-' + this.type.toLowerCase() + '" data-databaseID="'+this.databaseID+'">'+data.literal.slice(this.start,this.end)+'</span></span></td>';
                         html+='						<td>'+this.name+'</td>';
                         html+='						<td><input name="EntityGrade_'+i+'" type="range" value="'+this.grade+'" id="Entityrange'+this.id+'"><div class="rateit" data-rateit-backingfld="#Entityrange'+this.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
                         html+='						<td><textarea name="EntityComment_'+i+'" class="form-control" rows="1" id="EntityComment_'+i+'">'+this.comment+'</textarea></td>';

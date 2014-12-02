@@ -93,6 +93,7 @@ function loadMetaData(id) {
         dataType: 'json',
         success: function(data) {
             $("#metaDataPubMedID").attr("href", "http://www.ncbi.nlm.nih.gov/pubmed/?term=" + data.pmid).text(data.pmid);
+            $("#metaDataSentenceID").html(data.sentenceID);
             $("#metaDataDOI").attr("href", "http://dx.doi.org/" + data.doi).text(data.doi);
             $("#metaDataTitle").text(data.title);
             $("#metaDataAuthors").text(data.authors.join("; "));
@@ -161,7 +162,7 @@ function populateSentenceList() {
             }
         ],
         "order": [[ 3, "desc" ]],
-        "paging":false,
+        //"paging":false,
         "fnDrawCallback": function(oSettings) { // fnInitComplete
             // display grading stars
             $(".rateit").rateit();
@@ -171,25 +172,6 @@ function populateSentenceList() {
             
             // make search field a little prettier
             searchField().addClass("form-control").attr("placeholder", "Filter ...");
-            
-            // delay search until 3 characters entered
-            /*
-            var dtable = $("#sentenceTable").dataTable().api();
-            searchField()
-                .unbind() // Unbind previous default bindings
-                .bind("keyup", function(event) { // Bind our desired behavior
-                    // If (the length is 3 or more characters, or) the user pressed ENTER, search
-                    if(event.keyCode == 13) {
-                        // Call the API search function
-                        dtable.search(this.value).draw();
-                    }
-                    // Ensure we clear the search if they backspace far enough
-                    if(this.value == "") {
-                        dtable.search("").draw();
-                    }
-                    return;
-                });
-            */
             
             // truncating mechanism
             $('.sentenceLine').click(function() {  
@@ -211,7 +193,7 @@ function populateSentenceList() {
             searchField().focus();
         },
         "oLanguage": { "sSearch": "" }
-    });
+    }).fnFilterOnReturn();
 }
 
 function addGradeDialogButtonOnClickListener(){
@@ -269,28 +251,26 @@ function addGradeDialogButtonOnClickListener(){
                         html+='						<td><input name="EntityGrade_'+i+'" type="range" value="'+this.grade+'" id="Entityrange'+this.id+'"><div class="rateit" data-rateit-backingfld="#Entityrange'+this.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
                         html+='						<td><textarea name="EntityComment_'+i+'" class="form-control" rows="1" id="EntityComment_'+i+'">'+this.comment+'</textarea></td>';
                         html+='						<td><div id="ontologyAnnotationDiv_'+this.id+'">';
-						html+='				<table id="annotationtable'+this.id+'" class="table table-striped">';
+						html+='				<table id="annotationtable'+this.id+'" class="table table-striped table-condensed">';
 						html+='				<thead>';
 						/*html+='					<tr>';
 						html+='						<th>Urn</th>';
 						html+='						<th>Identifier</th>';
-						html+='						<th>Default</th>';
-						html+='						<th></th>';
+						html+='						<th>&nbsp;</th>';
 						html+='					</tr>';*/
 						html+='				</thead>';
 						html+='				<tbody>';
 						$.each(this.ontologyAnnotations,function(){
-							html+='					<tr id="annotationrow'+this.id+'">';
-							html+='						<td>'+this.urn+'</td>';
+							html+='					<tr id="annotationrow'+this.id+'" '+(this.default ? 'class="success"' : '')+'>';
+							html+='						<td>'+this.dbName+'</td>';
 							html+='						<td>'+this.identifier+'</td>';
-							html+='						<td>'+this.default+'</td>';
 							html+='						<td><button type="button" name="ontologyannotationRemove_'+this.id+'" class="close" data-ontologyannotationid="'+this.id+'"><span aria-hidden="true">&times;</span><span class="sr-only">Remove</span></button></td>';
 							html+='					</tr>';
 						});
 						html+='				</tbody>';
 						html+='				</table>';
 						html+='</div>';
-						html+='<div><button name="EntityAddAnnotationButton'+this.id+'" type="button" class="btn btn-success" data-entityid="'+this.id+'">Add Annotation</button></div></td>';
+						html+='<div><button name="EntityAddAnnotationButton'+this.id+'" type="button" class="btn btn-success btn-xs" data-entityid="'+this.id+'">Add Annotation</button></div></td>';
 						html+='					</tr>';
                         i=i+1;
                 });
@@ -472,20 +452,21 @@ function addAnnotationWithAjax(){
     success: function(data) {
         $('#annotationpopupid').fadeOut();
 		$('#overlay').fadeOut();
-		var table = document.getElementById('annotationtable'+data.entity_id);
-		var row = table.insertRow(table.rows.length);
-		row.id='annotationrow'+data.id;
-
-		var cell1 = row.insertCell(0);
-		var cell2 = row.insertCell(1);
-		var cell3 = row.insertCell(2);
-		var cell4 = row.insertCell(3);
-
-		cell1.innerHTML = data.urn;
-		cell2.innerHTML = data.identifier;
-		cell3.innerHTML = data.default;
-		cell4.innerHTML = '<button type="button" name="ontologyannotationRemove_'+data.id+'" class="close" data-ontologyannotationid="'+data.id+'"><span aria-hidden="true">&times;</span><span class="sr-only">Remove</span></button>';
-		$('button[name=ontologyannotationRemove_'+data.id+']').click(function () {
+		var table = $('#annotationtable'+data.entity_id);
+                
+                if(data.default) {
+                    $.each(table.find('tbody').children(), function() {
+                        $(this).removeClass("success");
+                    });
+                }
+                
+		var row = $('<tr id="annotationrow'+data.id+'" '+(data.default ? 'class="success"' : '')+'>');
+                row.append($('<td>'+data.dbName+'</td>'));
+                row.append($('<td>'+data.identifier+'</td>'));
+                row.append($('<td><button type="button" name="ontologyannotationRemove_'+data.id+'" class="close" data-ontologyannotationid="'+data.id+'"><span aria-hidden="true">&times;</span><span class="sr-only">Remove</span></button></td>'));
+                table.append(row);
+                
+                $('button[name=ontologyannotationRemove_'+data.id+']').click(function () {
 			var ontologyannotationid = jQuery(this).data('ontologyannotationid');
 			$.ajax({
 				url: '/removeOntologyAnnotation/' + ontologyannotationid,
@@ -536,6 +517,27 @@ $.fn.dataTableExt.afnFiltering.push(
         return false;
     }
 );
+
+// delay search until 3 characters entered
+jQuery.fn.dataTableExt.oApi.fnFilterOnReturn = function (oSettings) {
+    var _that = this;
+ 
+    this.each(function (i) {
+        $.fn.dataTableExt.iApiIndex = i;
+        var $this = this;
+        var anControl = $('input', _that.fnSettings().aanFeatures.f);
+        anControl
+            .unbind('keyup search input')
+            .bind('keyup', function (e) {
+                if(e.which == 13 || anControl.val().length >= 3 || anControl.val().length == 0) { 
+                    $.fn.dataTableExt.iApiIndex = i;
+                    _that.fnFilter(anControl.val());
+                }
+            });
+        return this;
+    });
+    return this;
+};
 
 $(function() {
     populateSentenceList();

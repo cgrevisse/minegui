@@ -632,11 +632,12 @@ function editAnnotationWithAjax(){
                         $(this).removeClass("success");
 						if(this.id==("annotationrow"+data.id)){
 							$(this).addClass("success");
-							$(this).children("td:nth-child(1)").html(data.dbName);
-							$(this).children("td:nth-child(2)").html(data.identifier);
 						}
                     });
                 }
+				var td=$("#annotationrow"+data.id);
+				$(td).children("td:nth-child(1)").html(data.dbName);
+				$(td).children("td:nth-child(2)").html(data.identifier);
                 
 		
 		}

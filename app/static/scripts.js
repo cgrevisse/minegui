@@ -298,11 +298,13 @@ function addGradeDialogButtonOnClickListener(){
 						html+='				</thead>';
 						html+='				<tbody>';
 						$.each(this.ontologyAnnotations,function(){
-							html+='					<tr id="annotationrow'+this.id+'" '+(this.default ? 'class="success"' : '')+'>';
+							html+='					<tr id="annotationrow'+this.id+'" '+(this.default ? 'class="success"' : '')+' data-ontologyannotationid="'+this.id+'">';
 							html+='						<td>'+this.dbName+'</td>';
 							html+='						<td>'+this.identifier+'</td>';
 							html+='						<td><button type="button" name="ontologyannotationRemove_'+this.id+'" class="close" data-ontologyannotationid="'+this.id+'"><span aria-hidden="true">&times;</span><span class="sr-only">Remove</span></button></td>';
 							html+='					</tr>';
+							
+		
 						});
 						html+='				</tbody>';
 						html+='				</table>';
@@ -344,6 +346,11 @@ function addGradeDialogButtonOnClickListener(){
                     return ($(document).width() * .7) + 'px';  
                 }
                 });
+				
+				$('tr[id^="annotationrow"]').bind("dblclick", function(){
+					editOntology(this);
+				});
+				
 				addAnnotationPopupButtonOnClickListener();
 				removeAnnotationButtonOnClickListener();
 				//hide annotation popup if curate popup was closed
@@ -363,6 +370,90 @@ function addGradeDialogButtonOnClickListener(){
         return false;
     });
 }
+
+function editOntology(element){
+			var ontologyannotationid = jQuery(element).data('ontologyannotationid');
+			$.ajax({
+				url: '/getOntologyAnnotation/' + ontologyannotationid,
+				type: "get",
+				data:{}, 
+				dataType: 'json',
+				success: function(data) {
+					var html='		<div class="modal-content">';
+				html+='		    <div class="modal-header">';
+				html+='			<button type="button" id="closeannotationpopup" class="close"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>';
+				html+='			<h4 class="modal-title">Edit ontology form</h4>';
+				html+='		    </div>';
+				html+='<div class="modal-body">';
+				html+='<form id="annotationForm" enctype="multipart/form-data">';
+				html+='				<table class="table table-striped">';
+                html+='				<thead>';
+                html+='					<tr>';
+                html+='						<th>Database</th>';
+                html+='						<th>Identifier</th>';
+                html+='						<th>Default</th>';
+                html+='					</tr>';
+                html+='				</thead>';
+                html+='				<tbody>';
+				html+='					<tr>';
+                html+='						<td><input type="hidden" name="entityID" value="'+data.entity_id+'"/><input type="hidden" name="ontologyID" value="'+data.id+'"/><select name="databaseURN" id="ontologyDBdropdown"></select></td>';
+                html+='						<td><input name="identifier" type="text" required value="'+data.identifier+'"></input></td>';
+                if(data.default){
+					html+='						<td><input name="default" type="checkbox" disabled="disabled" value="1" checked></td>';
+				}else{
+					html+='						<td><input name="default" type="checkbox" value="1"></td>';
+				}
+			   html+='					</tr>';
+				html+='				</tbody>';
+                html+='				</table>			';
+				html+='</form>';
+				html+='		    </div>';
+				html+='			<div class="modal-footer">';
+				html+='				<button id="closeannotationpopup2" type="button" class="btn btn-danger">Cancel</button>';
+				html+='			    <button type="button" onclick="editAnnotationWithAjax()" class="btn btn-success">Edit annotation</button>';
+				html+='			</div>';
+				html+='		    </div>';
+				$('#annotationcontainer').html(html);
+				var urn=data.urn;
+				$.ajax({
+					url: '/ontologyDBs',
+					type: 'GET',
+					data: {},
+					dataType: 'json',
+					success: function(data) {
+							var ontologyDBdropdown = $("#ontologyDBdropdown");
+							$.each( data, function( key, value ) {
+							if(key==urn){
+								ontologyDBdropdown.append($("<option />").val(key).text(value).prop('selected', true));
+							}else{
+								ontologyDBdropdown.append($("<option />").val(key).text(value));
+							}
+							});
+						}});
+				//display popup
+				$('#annotationpopupid').fadeIn();
+				$('#overlay').fadeIn();
+				var topmargin = ($('#annotationpopupid').height() + 10) / 2;
+				var leftmargin = ($('#annotationpopupid' ).width() + 10) / 2;
+				$('#annotationpopupid').css({
+					'margin-top' : -topmargin,
+					'margin-left' : -leftmargin
+				});
+		
+				//close popup if button is clicked
+				$('#closeannotationpopup').click(function(){
+					$('#annotationpopupid').fadeOut();
+					$('#overlay').fadeOut();
+				});
+				$('#closeannotationpopup2').click(function(){
+					$('#annotationpopupid').fadeOut();
+					$('#overlay').fadeOut();
+				});
+				}
+			});
+} 
+         
+  
 
 function sendDataWithAjax(){
     $.ajax({
@@ -421,7 +512,7 @@ function addAnnotationPopupButtonOnClickListener(){
 				var html='		<div class="modal-content">';
 				html+='		    <div class="modal-header">';
 				html+='			<button type="button" id="closeannotationpopup" class="close"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>';
-				html+='			<h4 class="modal-title">Feedback form</h4>';
+				html+='			<h4 class="modal-title">Add ontology form</h4>';
 				html+='		    </div>';
 				html+='<div class="modal-body">';
 				html+='<form id="annotationForm" enctype="multipart/form-data">';
@@ -497,7 +588,7 @@ function addAnnotationWithAjax(){
                     });
                 }
                 
-		var row = $('<tr id="annotationrow'+data.id+'" '+(data.default ? 'class="success"' : '')+'>');
+		var row = $('<tr id="annotationrow'+data.id+'" '+(data.default ? 'class="success"' : '')+'data-ontologyannotationid="'+data.id+'">');
                 row.append($('<td>'+data.dbName+'</td>'));
                 row.append($('<td>'+data.identifier+'</td>'));
                 row.append($('<td><button type="button" name="ontologyannotationRemove_'+data.id+'" class="close" data-ontologyannotationid="'+data.id+'"><span aria-hidden="true">&times;</span><span class="sr-only">Remove</span></button></td>'));
@@ -517,7 +608,38 @@ function addAnnotationWithAjax(){
 				}
 			});
 		});
+		
+		$(row).bind("dblclick", function(){	
+			editOntology(this);
+		});
 	}
+    });
+}
+
+function editAnnotationWithAjax(){
+    $.ajax({
+	url: "/editOntologyAnnotation",
+	type: "post",
+	data: $('#annotationForm').serialize(),
+	dataType: 'json',
+    success: function(data) {
+        $('#annotationpopupid').fadeOut();
+		$('#overlay').fadeOut();
+		var table = $('#annotationtable'+data.entity_id);
+                
+                if(data.default) {
+                    $.each(table.find('tbody').children(), function() {
+                        $(this).removeClass("success");
+						if(this.id==("annotationrow"+data.id)){
+							$(this).addClass("success");
+							$(this).children("td:nth-child(1)").html(data.dbName);
+							$(this).children("td:nth-child(2)").html(data.identifier);
+						}
+                    });
+                }
+                
+		
+		}
     });
 }
 

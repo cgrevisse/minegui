@@ -21,16 +21,14 @@
   	box-shadow: none;
 }
 
-td.sentenceLine div.truncate {
-   width: 250px;
-   white-space: nowrap;
-   overflow: hidden;
-   text-overflow: ellipsis;
+.truncate {
+	width: 250px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
  }
  
- #metaData {
-	display: none;
- }
+ #metaData { display: none; }
  
  .loadie {
 	position: absolute;
@@ -43,3 +41,45 @@ td.sentenceLine div.truncate {
 	box-shadow: 0px 1px 5px rgba(0,0,0,0.25);
 	z-index: 9999;
 }
+
+#gradingForm textarea {
+	overflow:auto;
+	resize:vertical;
+}
+
+.dataTables_wrapper .dataTables_filter {
+	float: none!important;
+	text-align: left!important;
+}
+
+/* Label colours */
+.label-pattern { background-color: #d9534f; }
+.label-protein { background-color: #5cb85c; }
+.label-go-process { background-color: #ffa500; }
+.label-chemical { background-color: #8b4513; }
+.label-disease { background-color: #008b8b; }
+
+.label a { color: #ffffff; }
+
+/* #sentenceList { font-family: serif!important; } */
+
+.annotationpopup {
+ width:auto;
+ height:auto;
+ display: none; 
+ float: left;
+ position: fixed;
+ top: 50%; left: 50%;
+ z-index: 99999;
+ box-shadow: 0px 0px 20px #000;
+}
+
+#overlay {
+ display: none;
+ background: #000;
+ position: fixed; left: 0; top: 0;
+ width: 100%; height: 100%;
+ opacity: .80;
+ z-index: 9999;
+}
+

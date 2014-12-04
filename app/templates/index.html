@@ -17,7 +17,8 @@
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
         <link rel="stylesheet" type="text/css" href="/static/style.css">
-		<link rel="stylesheet" type="text/css" href="/static/rateit.css">
+	<link rel="stylesheet" type="text/css" href="/static/rateit.css">
+	<link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.10.4/css/jquery.dataTables.min.css">
     </head>
     <body>
 	<div class="container" style="width:95%;">
@@ -45,10 +46,21 @@
 						<h4 class="modal-title">Import data from file</h4>
 					    </div>
 					    
-					    <form enctype="multipart/form-data" action="{{ url_for('index') }}" method="post">
+					    <form enctype="multipart/form-data" action="{{ url_for('index') }}" method="post" role="form">
 					    	<div class="modal-body">
-						    <p class="help-block">Please select a text file to import. Only <code>.txt</code> files are accepted.</p>
-						    <input type="file" name="importFileInput" />
+						    <div class="form-group">
+							<label for="importFileFormat">File format:</label>
+							<select id="importFileFormat" name="format" class="form-control">
+							    <option value="corpus">Corpus</option>
+							    <option value="xml">XML</option>
+							    <option value="ensemblHGNCMap">Ensembl to HGNC mapping</option>
+							</select>
+						    </div>
+						    <div class="form-group">
+							<label for="importFileInput">File input:</label>
+							<input type="file" id="importFileInput" name="importFileInput" />
+							<p class="help-block">Please select a text file to import. Only <code>.txt</code> and <code>.xml</code> files are accepted.</p>
+						    </div>
 						</div>
 						<div class="modal-footer">
 						    <button type="submit" class="btn btn-success">Import ...</button>
@@ -63,40 +75,46 @@
 			</div>
 		    </div>
 
-		    <!-- Filters -->
-		    <div class="panel panel-default mylisting">
+		    <!-- Paper Metadata -->
+		    <div class="panel panel-default" id="metaData">
 			<div class="panel-heading">
-			    <h3 class="panel-title">Filters</h3>
+			    <h3 class="panel-title">Paper Details</h3>
 			</div>
-			
 			<div class="panel-body">
-			    <select class="form-control">
-				<option>Filter by Entity</option>
-				<option>Filter by Interaction</option>
-			    </select>
-
-			    <input type="text" class="form-control" placeholder="Search ..." />
+			    <p style="font-style:italic;font-size:8pt;">
+				PubMed ID: <a id="metaDataPubMedID" target="_blank"></a><br/>
+				Sentence &#35;: <span id="metaDataSentenceID"></span><br/>
+				DOI: <a id="metaDataDOI" target="_blank"></a>
+			    </p>
 			    
-			    <select multiple class="form-control" size="10">
-				<option>All</option>
-			    </select>
+			    <address><strong>Title</strong><br><span id="metaDataTitle"></span></address>
+			    <address><strong>Author(s)</strong><br><span id="metaDataAuthors"></span></address>
+			    <address><strong>Journal</strong><br><span id="metaDataJournal"></span></address>
+			    <address><strong>Year</strong><br><span id="metaDataYear"></span></address>
+			    
+			    <div class="well well-sm">
+				<h6>Abstract</h6>
+				<p style="font-size:10pt;font-style:italic;text-align: justify;" id="metaDataAbstract"></p>
+			    </div>
 			</div>
 		    </div>
 		    
 		</div>
 		
 		<!-- Sentence List -->
-                <div class="col-lg-6">
+                <div class="col-lg-9">
                     <div class="panel panel-default">
 			<div class="panel-body">
-			    <div style="height: 400px !important; overflow: scroll;">
+			    <div style="/*height: 800px !important; overflow: scroll;*/">
 				<div class="table-responsive">
-				    <table class="table table-striped">
+				    <table class="display table table-striped" id="sentenceTable" cellspacing="0" width="100%">
 					<thead>
 					    <tr>
 						<th>Sentence</th>
 						<th>Score</th>
 						<th>Grade</th>
+						<th>Grade</th>
+						<th>&nbsp;</th>
 						<th>&nbsp;</th>
 					    </tr>
 					</thead>
@@ -112,38 +130,15 @@
 		<div id="gradeContainer">
 		</div>
 		
-		<!-- Paper Metadata -->
-		<div class="col-md-3">
-		    <div class="panel panel-default" id="metaData">
-			<div class="panel-heading">
-			    <h3 class="panel-title">Paper Details</h3>
-			</div>
-			<div class="panel-body">
-			    <p style="font-style:italic;font-size:8pt;">
-				PubMed ID: <a id="metaDataPubMedID" target="_blank"></a><br/>
-				DOI: <a id="metaDataDOI" target="_blank"></a>
-			    </p>
-			    
-			    <address><strong>Title</strong><br><span id="metaDataTitle"></span></address>
-			    <address><strong>Author(s)</strong><br><span id="metaDataAuthors"></span></address>
-			    <address><strong>Journal</strong><br><span id="metaDataJournal"></span></address>
-			    <address><strong>Year</strong><br><span id="metaDataYear"></span></address>
-			    
-			    <div class="well well-sm">
-				<h6>Abstract</h6>
-				<p style="font-size:10pt;font-style:italic;text-align: justify;" id="metaDataAbstract"></p>
-			    </div>
-			</div>
-		    </div>
-		</div>
-		
             </div>
         </div>
         
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
         <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+	<script src="http://cdn.datatables.net/1.10.4/js/jquery.dataTables.min.js"></script>
 	<script src="/static/scripts.js"></script>
 	<script src="/static/jquery.loadie.min.js"></script>
+	<script src="/static/jquery.hovercard.min.js"></script>
 	<script src="/static/jquery.rateit.js"></script>
   </body>
 </html>

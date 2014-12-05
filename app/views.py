@@ -202,37 +202,6 @@ def addOntologyAnnotation():
 		db.session.add(o)
 		db.session.commit()
 		return dumps(o.serialize)
-
-@app.route('/editOntologyAnnotation', methods=['GET', 'POST'])
-def editOntologyAnnotation():
-	if request.method == 'POST':
-		entityID = int(request.form['entityID'])
-		ontologyID = int(request.form['ontologyID'])
-		databaseURN = request.form['databaseURN']
-		identifier = request.form['identifier']
-		entity = Entity.query.get(entityID)
-		o = OntologyAnnotation.query.get(ontologyID)
-		o.urn=databaseURN
-		o.identifier=identifier
-		default=False
-		# if only annotation make it default
-		if len(entity.ontologyAnnotations) == 1:
-			default = True
-		
-		if 'default' in request.form:
-			default = True
-		
-		if o.default:
-			default = True
-		# if this ontology annotation should be default, set default to false for all previous ones
-		if default:
-			for oa in entity.ontologyAnnotations:
-				oa.default = False
-		
-		o.default=default
-		
-		db.session.commit()
-		return dumps(o.serialize)
 		
 @app.route('/removeOntologyAnnotation/<int:id>')
 def deleteOntologyAnnotation(id):
@@ -241,10 +210,7 @@ def deleteOntologyAnnotation(id):
 	db.session.commit()
 	return dumps(o.serialize)
 
-@app.route('/getOntologyAnnotation/<int:id>')
-def getOntologyAnnotation(id):
-	o = OntologyAnnotation.query.get(id)
-	return dumps(o.serialize)
+
 # Import
 
 def corpusImport(inputFile):
@@ -269,10 +235,42 @@ def corpusImport(inputFile):
 			createBlock(block)
 
 def xmlImport(inputFile):
-	'''
-	TODO Raphael
-	'''
-	pass
+
+	# Truncate DB
+	Sentence.query.delete()
+	Entity.query.delete()
+	Interaction.query.delete()
+	db.session.commit()
+	
+
+	tree = ET.parse(inputFile)
+	root = tree.getroot()
+	for sentence in root:
+		sentence_attr = { el.tag: el.text for el in sentence if el.text}
+		
+		# Entity
+		entities = []
+		for entity in sentence.iter("entity"):
+			entity_attr = { el.tag: el.text for el in entity if el.text}
+			entities.append( Entity(**entity_attr)	)
+
+		# Interaction
+		interactions = []
+		for interaction in sentence.iter("interaction"):
+			interaction_attr = { el.tag: el.text for el in interaction if el.text}
+			interactions.append( Interaction(**interaction_attr) )
+
+		sentence_attr["entities"] = entities
+		sentence_attr["interactions"] = interactions
+
+		s = Sentence(**sentence_attr)
+
+		db.session.add(s)
+	
+
+	db.session.commit()
+
+	
 
 def ensemblHGCNMapImport(inputFile):
 	with open(inputFile, 'r') as input:

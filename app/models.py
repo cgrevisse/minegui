@@ -99,7 +99,7 @@ class Keyword(db.Model):
     start = db.Column(db.Integer)
     end = db.Column(db.Integer)
     grade = db.Column(db.Integer)
-    comment = db.Column(db.String(200))
+    comment = db.Column(db.String(200), default="")
     
 class Entity(Keyword):
     __tablename__ = "entity"
@@ -216,7 +216,7 @@ class Sentence(db.Model):
     literal = db.Column(db.String(500))
     score = db.Column(db.Float)
     grade = db.Column(db.Integer)
-    comment = db.Column(db.Text)
+    comment = db.Column(db.Text, default="")
     
     # lazy = 'dynamic'
     entities = db.relationship('Entity', backref = 'sentence', lazy="joined", join_depth=2)

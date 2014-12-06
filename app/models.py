@@ -47,7 +47,7 @@ class OntologyAnnotation(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     urn = db.Column(db.String(100))
     identifier = db.Column(db.String(100))
-    default = db.Column(db.Boolean)
+    default = db.Column(db.String(10))
     
     entity_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     
@@ -99,7 +99,7 @@ class Keyword(db.Model):
     start = db.Column(db.Integer)
     end = db.Column(db.Integer)
     grade = db.Column(db.Integer)
-    comment = db.Column(db.String(200), default="")
+    comment = db.Column(db.String(200))
     
 class Entity(Keyword):
     __tablename__ = "entity"
@@ -216,7 +216,7 @@ class Sentence(db.Model):
     literal = db.Column(db.String(500))
     score = db.Column(db.Float)
     grade = db.Column(db.Integer)
-    comment = db.Column(db.Text, default="")
+    comment = db.Column(db.Text)
     
     # lazy = 'dynamic'
     entities = db.relationship('Entity', backref = 'sentence', lazy="joined", join_depth=2)

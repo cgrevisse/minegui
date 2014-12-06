@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="sentences">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="sentence" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:all>
+							<xs:element type="xs:unsignedLong" name="id"/>
+							<xs:element type="xs:unsignedLong" name="pubmedID"/>
+							<xs:element type="xs:unsignedLong" name="sentenceID"/>
+							<xs:element type="xs:float" name="score"/>
+							<xs:element type="xs:string" name="literal"/>
+							<xs:element type="xs:byte" name="grade"/>
+							<xs:element type="xs:string" name="comment"/>
+							<xs:element name="entities">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="entity" minOccurs="0" maxOccurs="unbounded">
+											<xs:complexType>
+												<xs:all>
+													<xs:element type="xs:unsignedLong" name="id"/>
+													<xs:element type="xs:unsignedLong" name="sentence_id"/>
+													<xs:element type="xs:string" name="name"/>
+													<xs:element type="xs:string" name="type"/>
+													<xs:element type="xs:string" name="software"/>
+													<xs:element type="xs:unsignedLong" name="start"/>
+													<xs:element type="xs:unsignedLong" name="end"/>
+													<xs:element type="xs:string" name="databaseID"/>
+													<xs:element type="xs:byte" name="grade"/>
+													<xs:element type="xs:string" name="comment"/>
+													<xs:element type="xs:string" name="ontologyLink"/>
+													<xs:element name="ontologyAnnotations">
+														<xs:complexType>
+															<xs:sequence>
+																<xs:element name="ontologyAnnotation" minOccurs="0" maxOccurs="unbounded">
+																	<xs:complexType>
+																		<xs:all>
+																			<xs:element name="id" type="xs:unsignedLong" />
+																			<xs:element name="entity_id" type="xs:unsignedLong" />
+																			<xs:element name="dbName" type="xs:string" />
+																			<xs:element name="urn" type="xs:string" />
+																			<xs:element name="identifier" type="xs:string" />
+																			<xs:element name="default" type="xs:string" />
+																		</xs:all>
+																	</xs:complexType>
+																</xs:element>
+															</xs:sequence>
+														</xs:complexType>
+													</xs:element>
+												</xs:all>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="interactions">
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="interaction" minOccurs="0" maxOccurs="unbounded">
+											<xs:complexType>
+												<xs:all>
+													<xs:element type="xs:unsignedLong" name="id"/>
+													<xs:element type="xs:unsignedLong" name="sentence_id"/>
+													<xs:element type="xs:string" name="type"/>
+													<xs:element type="xs:unsignedLong" name="start"/>
+													<xs:element type="xs:unsignedLong" name="end"/>
+													<xs:element type="xs:byte" name="grade"/>
+													<xs:element type="xs:string" name="comment"/>
+												</xs:all>
+											</xs:complexType>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+						</xs:all>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

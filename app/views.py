@@ -5,6 +5,7 @@ from json import dumps
 from .xmllib import dict2xmlstring
 import os, sys, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
 import xml.dom.minidom
+#import inspect
 
 inputFilesDir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'inputFiles')
 allowedFileExtensions = ['txt', 'xml']
@@ -269,10 +270,56 @@ def corpusImport(inputFile):
 			createBlock(block)
 
 def xmlImport(inputFile):
-	'''
-	TODO Raphael
-	'''
-	pass
+	def named_parameters(model):
+		columns = [m.key for m in model.__table__.columns]
+		return columns
+
+
+	# Truncate DB
+	Sentence.query.delete()
+	Entity.query.delete()
+	Interaction.query.delete()
+	OntologyAnnotation.query.delete()
+	db.session.commit()
+
+	
+	
+
+	tree = ET.parse(inputFile)
+	root = tree.getroot()
+	for sentence in root:
+		sentence_attr = { el.tag: el.text for el in sentence if el.text and el.tag in named_parameters(Sentence)}
+		
+		# Entity
+		entities = []
+		for entity in sentence.iter("entity"):
+			entity_attr = { el.tag: el.text for el in entity if el.text and el.tag in named_parameters(Entity)}
+
+			# Ontology Annotation
+			ontologyAnnotations = []
+			for ontologyAnnotation in entity.iter("ontologyAnnotation"):
+				ontologyAnnotation_attr = { el.tag: el.text for el in ontologyAnnotation if el.text and el.tag in named_parameters(OntologyAnnotation)}
+				print(ontologyAnnotation_attr)
+				ontologyAnnotations.append( OntologyAnnotation(**ontologyAnnotation_attr) )
+
+			entity_attr["ontologyAnnotations"] = ontologyAnnotations
+			entities.append( Entity(**entity_attr)	)
+
+		# Interaction
+		interactions = []
+		for interaction in sentence.iter("interaction"):
+			interaction_attr = { el.tag: el.text for el in interaction if el.text and el.tag in named_parameters(Interaction)}
+			interactions.append( Interaction(**interaction_attr) )
+
+		sentence_attr["entities"] = entities
+		sentence_attr["interactions"] = interactions
+
+		s = Sentence(**sentence_attr)
+
+		db.session.add(s)
+	
+
+	db.session.commit()
 
 def ensemblHGCNMapImport(inputFile):
 	with open(inputFile, 'r') as input:

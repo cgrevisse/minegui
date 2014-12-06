@@ -416,20 +416,29 @@ function editOntology(element){
 				$('#annotationcontainer').html(html);
 				var urn=data.urn;
 				$.ajax({
-					url: '/ontologyDBs',
-					type: 'GET',
-					data: {},
-					dataType: 'json',
-					success: function(data) {
-							var ontologyDBdropdown = $("#ontologyDBdropdown");
-							$.each( data, function( key, value ) {
-							if(key==urn){
-								ontologyDBdropdown.append($("<option />").val(key).text(value).prop('selected', true));
-							}else{
-								ontologyDBdropdown.append($("<option />").val(key).text(value));
-							}
-							});
-						}});
+                                    url: '/ontologyDBs',
+                                    type: 'GET',
+                                    data: {},
+                                    dataType: 'json',
+                                    success: function(data) {
+                                        var ontologyDBdropdown = $("#ontologyDBdropdown");
+                                        
+                                        // sort ontology list by DB name
+                                        var values = [];
+                                        var valueToKeyMap = {}
+                                
+                                        $.each(data, function(key, value) {
+                                            values.push(value)
+                                            valueToKeyMap[value] = key;
+                                        });
+                                
+                                        $.each(values.sort(), function() {
+                                            value = this
+                                            key = valueToKeyMap[value];
+                                            ontologyDBdropdown.append($('<option value = "' + key + '" ' + (key == urn ? 'selected="selected"' : '') + '>' + value + '</option>'));
+                                        });
+                                    }
+                                });
 				//display popup
 				$('#annotationpopupid').fadeIn();
 				$('#overlay').fadeIn();
@@ -540,11 +549,25 @@ function addAnnotationPopupButtonOnClickListener(){
 				html+='			</div>';
 				html+='		    </div>';
 				$('#annotationcontainer').html(html);
-				var ontologyDBdropdown = $("#ontologyDBdropdown");
-				$.each( data, function( key, value ) {
-					ontologyDBdropdown.append($("<option />").val(key).text(value));
-				});
-				//display popup
+				
+                                var ontologyDBdropdown = $("#ontologyDBdropdown");
+                                
+                                // sort ontology list by DB name
+                                var values = [];
+                                var valueToKeyMap = {}
+                        
+                                $.each(data, function(key, value) {
+                                    values.push(value)
+                                    valueToKeyMap[value] = key;
+                                });
+                        
+                                $.each(values.sort(), function() {
+                                    value = this
+                                    key = valueToKeyMap[value];
+                                    ontologyDBdropdown.append($("<option />").val(key).text(value));
+                                });
+                                
+                                //display popup
 				$('#annotationpopupid').fadeIn();
 				$('#overlay').fadeIn();
 				var topmargin = ($('#annotationpopupid').height() + 10) / 2;

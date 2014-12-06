@@ -47,7 +47,7 @@ class OntologyAnnotation(db.Model):
     id = db.Column(db.Integer, primary_key = True)
     urn = db.Column(db.String(100))
     identifier = db.Column(db.String(100))
-    default = db.Column(db.String(10))
+    default = db.Column(db.Boolean)
     
     entity_id = db.Column(db.Integer, db.ForeignKey('entity.id'))
     

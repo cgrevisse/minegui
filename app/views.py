@@ -5,7 +5,6 @@ from json import dumps
 from .xmllib import dict2xmlstring
 import os, sys, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
 import xml.dom.minidom
-#import inspect
 
 inputFilesDir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'inputFiles')
 allowedFileExtensions = ['txt', 'xml']
@@ -22,7 +21,8 @@ def index():
 		format = request.form['format']
 		
 		file = request.files['importFileInput']
-		if file and file.filename.rsplit('.', 1)[1] in allowedFileExtensions:
+		
+		if file and len(file.filename) > 0 and file.filename.rsplit('.', 1)[1] in allowedFileExtensions:
 			
 			# create input files directory
 			if not os.path.exists(inputFilesDir):
@@ -184,6 +184,10 @@ def addOntologyAnnotation():
 		databaseURN = request.form['databaseURN']
 		identifier = request.form['identifier']
 		
+		# no identifier -> no ontology annotation
+		if len(identifier) == 0:
+			return dumps({})
+		
 		entity = Entity.query.get(entityID)
 		
 		default=False
@@ -212,6 +216,11 @@ def editOntologyAnnotation():
 		databaseURN = request.form['databaseURN']
 		identifier = request.form['identifier']
 		entity = Entity.query.get(entityID)
+		
+		# no identifier -> no ontology annotation
+		if len(identifier) == 0:
+			return dumps({})
+		
 		o = OntologyAnnotation.query.get(ontologyID)
 		o.urn=databaseURN
 		o.identifier=identifier
@@ -246,6 +255,8 @@ def deleteOntologyAnnotation(id):
 def getOntologyAnnotation(id):
 	o = OntologyAnnotation.query.get(id)
 	return dumps(o.serialize)
+
+
 # Import
 
 def corpusImport(inputFile):
@@ -274,16 +285,12 @@ def xmlImport(inputFile):
 		columns = [m.key for m in model.__table__.columns]
 		return columns
 
-
 	# Truncate DB
 	Sentence.query.delete()
 	Entity.query.delete()
 	Interaction.query.delete()
 	OntologyAnnotation.query.delete()
 	db.session.commit()
-
-	
-	
 
 	tree = ET.parse(inputFile)
 	root = tree.getroot()
@@ -299,8 +306,10 @@ def xmlImport(inputFile):
 			ontologyAnnotations = []
 			for ontologyAnnotation in entity.iter("ontologyAnnotation"):
 				ontologyAnnotation_attr = { el.tag: el.text for el in ontologyAnnotation if el.text and el.tag in named_parameters(OntologyAnnotation)}
-				print(ontologyAnnotation_attr)
+				ontologyAnnotation_attr["default"] = (ontologyAnnotation_attr["default"] == 'True')
 				ontologyAnnotations.append( OntologyAnnotation(**ontologyAnnotation_attr) )
+
+			if not "comment" in entity_attr: entity_attr["comment"] = ""
 
 			entity_attr["ontologyAnnotations"] = ontologyAnnotations
 			entities.append( Entity(**entity_attr)	)
@@ -309,10 +318,12 @@ def xmlImport(inputFile):
 		interactions = []
 		for interaction in sentence.iter("interaction"):
 			interaction_attr = { el.tag: el.text for el in interaction if el.text and el.tag in named_parameters(Interaction)}
+			if not "comment" in interaction_attr: interaction_attr["comment"] = ""
 			interactions.append( Interaction(**interaction_attr) )
 
 		sentence_attr["entities"] = entities
 		sentence_attr["interactions"] = interactions
+		if not "comment" in sentence_attr: sentence_attr["comment"] = ""
 
 		s = Sentence(**sentence_attr)
 

@@ -61,11 +61,17 @@ class OntologyAnnotation(db.Model):
         
         try:
             f = urllib.request.urlopen(url)
-            root = ET.fromstring(html.unescape(f.read().decode('utf-8')))
             
-            for uri in root.iter('uri'):
-                if(not ("deprecated" in uri.attrib and uri.attrib["deprecated"] == "true") and ("type" in uri.attrib and uri.attrib["type"] == "URL")):
-                    uris.append(uri.text)
+            fileContents = html.unescape(f.read().decode('utf-8'))
+            
+            try:
+                root = ET.fromstring(fileContents)
+                
+                for uri in root.iter('uri'):
+                    if(not ("deprecated" in uri.attrib and uri.attrib["deprecated"] == "true") and ("type" in uri.attrib and uri.attrib["type"] == "URL")):
+                        uris.append(uri.text)
+            except ET.ParseError:
+                print(fileContents)
         except urllib.error.HTTPError:
             pass
 

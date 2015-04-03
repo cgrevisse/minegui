@@ -106,8 +106,8 @@ function createHighlightedSentence(row) {
             index = sh.start;
             popFromArray = false;
         } else if(index == sh.start) {
-            highlightedSentence = highlightedSentence + '<span title="' + sh.type + '"><span class="' + sh.color + '" '+(sh.keywordID != null ? 'data-id="'+sh.keywordID+'"' : '')+' data-databaseID="' + sh.databaseID + '">' + initialSentence.slice(sh.start, sh.end) + '</span></span>';
-            index = sh.end;
+            highlightedSentence = highlightedSentence + '<span title="' + sh.type + '"><span class="' + sh.color + '" '+(sh.keywordID != null ? 'data-id="'+sh.keywordID+'"' : '')+' data-databaseID="' + sh.databaseID + '">' + initialSentence.slice(sh.start, sh.end+1) + '</span></span>';
+            index = sh.end+1;
             popFromArray = true;
         } else {
             //if index < start skip the entity, as this part of the sentence was already highlighted
@@ -283,7 +283,7 @@ function addGradeDialogButtonOnClickListener(){
                 $.each(data.entities, function() {
                         html+='<input type="hidden" name="EntityID_'+i+'" value="'+this.id+'"/>';
                         html+='					<tr>';
-                        html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end)+'"><span data-id="'+this.id+'" class="label label-entity label-' + this.type.toLowerCase() + '" data-databaseID="'+this.databaseID+'">'+data.literal.slice(this.start,this.end)+'</span></span></td>';
+                        html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end+1)+'"><span data-id="'+this.id+'" class="label label-entity label-' + this.type.toLowerCase() + '" data-databaseID="'+this.databaseID+'">'+data.literal.slice(this.start,this.end+1)+'</span></span></td>';
                         html+='						<td>'+this.name+'</td>';
                         html+='						<td><input name="EntityGrade_'+i+'" type="range" value="'+this.grade+'" id="Entityrange'+this.id+'"><div class="rateit" data-rateit-backingfld="#Entityrange'+this.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
                         html+='						<td><textarea name="EntityComment_'+i+'" class="form-control" rows="1" id="EntityComment_'+i+'">'+this.comment+'</textarea></td>';
@@ -319,7 +319,7 @@ function addGradeDialogButtonOnClickListener(){
                 $.each(data.interactions, function() {
                         html+='<input type="hidden" name="InteractionID_'+i+'" value="'+this.id+'"/>';
                         html+='					<tr>';
-                        html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end)+'"><span class="label label-pattern">'+data.literal.slice(this.start,this.end)+'</span></span></td>';
+                        html+='						<td><span title="'+this.type+'" data-protein="'+data.literal.slice(this.start,this.end+1)+'"><span class="label label-pattern">'+data.literal.slice(this.start,this.end+1)+'</span></span></td>';
                         html+='						<td>'+this.type+'</td>';
                         html+='						<td><input name="InteractionGrade_'+i+'" type="range" value="'+this.grade+'" id="Interactionrange'+this.id+'"><div class="rateit" data-rateit-backingfld="#Interactionrange'+this.id+'"  data-rateit-resetable="false" data-rateit-ispreset="true" data-rateit-min="0" data-rateit-max="5" data-rateit-step="1"></div></td>';
                         html+='						<td><textarea name="InteractionComment_'+i+'" class="form-control" rows="1" id="InteractionComment_'+i+'">'+this.comment+'</textarea></td>';

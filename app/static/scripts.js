@@ -1,3 +1,11 @@
+function loading() {
+    $('body').append($('<div id="loading-overlay"><img id="loading" src="/static/loading.gif"></div>'));
+    $(document).keyup(function(e) {
+        if(e.which === 27)
+            $('#loading-overlay').remove();
+    });
+}
+
 //SentenceHighlight "object" created from entities or interactions
 function SentenceHighlight(start,end,type,color, databaseID, keywordID) {
     this.start = start;
@@ -723,6 +731,7 @@ jQuery.fn.dataTableExt.oApi.fnFilterOnReturn = function (oSettings) {
 };
 
 $(function() {
+    $("#importForm").submit(function() { loading(); });
     populateSentenceList();
     addGradeDialogButtonOnClickListener();
 });

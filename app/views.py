@@ -1,9 +1,9 @@
 from flask import render_template, request, jsonify, make_response, url_for, redirect
 from app import app, db
-from app.models import Sentence, Entity, Interaction, OntologyAnnotation, EnsemblHGNCMap, ontologyDBs
+from app.models import *
 from json import dumps
 from .xmllib import dict2xmlstring
-import os, sys, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
+import os, sys, csv, json, urllib, urllib.request, html, xml.etree.ElementTree as ET
 import xml.dom.minidom
 
 inputFilesDir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'inputFiles')
@@ -332,15 +332,78 @@ def xmlImport(inputFile):
 
 	db.session.commit()
 
+# 3 following methods: check whether not already within DB to avoid integrity errors !!!
+
 def ensemblHGCNMapImport(inputFile):
 	with open(inputFile, 'r') as input:
 		lines = [line.strip() for line in input.readlines()[1:]] # header line included
 		
 		for line in lines:
 			(ensemblProteinID, hgncSymbol) = line.split("\t")
-			db.session.add(EnsemblHGNCMap(ensemblProteinID = ensemblProteinID, hgncSymbol = hgncSymbol))
+			
+			if len(EnsemblHGNCMap.query.filter_by(ensemblProteinID = ensemblProteinID, hgncSymbol = hgncSymbol).all()) == 0:
+				db.session.add(EnsemblHGNCMap(ensemblProteinID = ensemblProteinID, hgncSymbol = hgncSymbol))
 			
 		db.session.commit()
+
+def stringEntrezMapImport(inputFile):
+	with open(inputFile, 'r') as input:
+		stringEntrez = csv.reader(input, delimiter='\t')
+		header = False
+		for row in stringEntrez:
+			if header is False: 
+				header = True
+			else:
+				stringLocusID = row[1].strip()
+				entrezGeneID = row[0].strip()
+			
+				if len(stringLocusID) and len(entrezGeneID) and len(StringEntrezMap.query.filter_by(stringLocusID = stringLocusID, entrezGeneID = entrezGeneID).all()) == 0:
+					db.session.add(StringEntrezMap(stringLocusID = stringLocusID, entrezGeneID = entrezGeneID))
+				
+		db.session.commit()
+		
+		updateStringEntrezHGNCMap()
+
+def entrezHGNCMapImport(inputFile):
+	with open(inputFile) as input:
+		entrezHGNC = csv.reader(input, delimiter='\t')
+		header = False
+		for row in entrezHGNC:
+			if header is False: 
+				header = True
+			else:
+				# Columns: 'HGNC ID', 'Approved Symbol', 'Approved Name', 'Status', 'Previous Symbols', 'Synonyms', 'Chromosome', 'Accession Numbers', 'RefSeq IDs', 'Entrez Gene ID(supplied by NCBI)', 'Ensembl ID(supplied by Ensembl)'
+				entrezGeneID = row[9]
+				status = row[3]
+				approvedSymbol = row[1] # caution: invalid data possible (e.g. date)
+				approvedName = row[2]
+				
+				toAdd = []
+				if status == 'Approved':
+					toAdd.append((entrezGeneID, approvedSymbol))
+				elif status == 'Symbol Withdrawn':
+					hgncIDs = [hgncID.strip() for hgncID in approvedName.replace('symbol withdrawn, see ','').split(',')] # more than 1 HGNC ID possible
+					for hgncID in hgncIDs:
+						toAdd.append((entrezGeneID, hgncID))
+						
+				for entrezGeneID, hgncSymbol in toAdd:
+					if len(entrezGeneID) and len(hgncSymbol) and len(EntrezHGNCMap.query.filter_by(entrezGeneID = entrezGeneID, hgncSymbol = hgncSymbol).all()) == 0:
+						db.session.add(EntrezHGNCMap(entrezGeneID = entrezGeneID, hgncSymbol = hgncSymbol))
+		
+		db.session.commit()
+		
+		updateStringEntrezHGNCMap()
+
+def updateStringEntrezHGNCMap():
+	for stringEntrez in StringEntrezMap.query.all():
+		for entrezHGNC in EntrezHGNCMap.query.filter_by(entrezGeneID = stringEntrez.entrezGeneID).all():
+			ensemblProteinID = stringEntrez.stringLocusID.replace('9606.','')
+			hgncSymbol = entrezHGNC.hgncSymbol
+			
+			if len(EnsemblHGNCMap.query.filter_by(ensemblProteinID = ensemblProteinID, hgncSymbol = hgncSymbol).all()) == 0:
+				db.session.add(EnsemblHGNCMap(ensemblProteinID = ensemblProteinID, hgncSymbol = hgncSymbol))
+				
+	db.session.commit()
 
 def importDataFromFile(inputFile, format):
 	if format == 'corpus':
@@ -349,6 +412,10 @@ def importDataFromFile(inputFile, format):
 		xmlImport(inputFile)
 	elif format == 'ensemblHGNCMap':
 		ensemblHGCNMapImport(inputFile)
+	elif format == 'stringEntrezMap':
+		stringEntrezMapImport(inputFile)
+	elif format == 'entrezHGNCMap':
+		entrezHGNCMapImport(inputFile)
 	else:
 		pass
 	

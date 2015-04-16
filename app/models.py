@@ -41,6 +41,18 @@ class EnsemblHGNCMap(db.Model):
     ensemblProteinID = db.Column(db.String(100), primary_key = True)
     hgncSymbol = db.Column(db.String(100), primary_key = True)
 
+class StringEntrezMap(db.Model):
+    __tablename__ = "stringEntrezMap"
+    
+    stringLocusID = db.Column(db.String(100), primary_key = True)
+    entrezGeneID = db.Column(db.String(100), primary_key = True)
+    
+class EntrezHGNCMap(db.Model):
+    __tablename__ = "entrezHGNCMap"
+    
+    entrezGeneID = db.Column(db.String(100), primary_key = True)
+    hgncSymbol = db.Column(db.String(100), primary_key = True)
+
 class OntologyAnnotation(db.Model):
     __tablename__ = "ontologyAnnotation"
     

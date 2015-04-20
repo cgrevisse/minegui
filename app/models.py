@@ -191,6 +191,9 @@ class Entity(Keyword):
         elif self.type == "Chemical":
             id = self.databaseID.replace("CID", "")
             databaseIDLinks.append(self.createLinkDict("Chemical", id, "https://pubchem.ncbi.nlm.nih.gov/compound/{}".format(id)))
+        elif self.type == "Celtis":
+            id = self.databaseID.replace(":", "_")
+            databaseIDLinks.append(self.createLinkDict("Tissue/Cell type", id, "ftp://ftp.informatics.jax.org/pub/curatorwork/BTO_Graphs/{}.svg".format(id)))
         else:
             pass
 

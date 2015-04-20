@@ -19,9 +19,9 @@ function SentenceHighlight(start,end,type,color, databaseID, keywordID) {
 //compare function for SentenceHighlight objects: criteria=start attribute
 function compareStart(a,b) {
     if (a.start > b.start)
-         return -1;
+         return 1;
     if (a.start < b.start)
-        return 1;
+        return -1;
     return 0;
 }
 
@@ -85,7 +85,6 @@ function updateOntologyLinks() {
 }
 
 function createHighlightedSentence(row) {
-    
     var sentenceHighlightArray = [];
     $.each(row.entities, function() {
         sentenceHighlightArray.push(new SentenceHighlight(parseInt(this.start), parseInt(this.end), this.type, "label label-dataTable label-entity label-" + this.type.toLowerCase(), this.databaseID, this.id));
@@ -99,31 +98,31 @@ function createHighlightedSentence(row) {
     var index = 0;
     var highlightedSentence = "";
     var initialSentence = row.literal;
-    var popFromArray = true;
-    
+    var next = true;
+    var sh;
+        
     // generate highlighted sentence
     while(sentenceHighlightArray.length > 0) {
-        var sh;
-        if(popFromArray) {
-            sh = sentenceHighlightArray.pop();
-        }
+        if(next)
+            sh = sentenceHighlightArray[0];
         
         if(index < sh.start) {
             // non highlighted text
             highlightedSentence = highlightedSentence + initialSentence.slice(index,sh.start);
             index = sh.start;
-            popFromArray = false;
+            next = false;
         } else if(index == sh.start) {
             highlightedSentence = highlightedSentence + '<span title="' + sh.type + '"><span class="' + sh.color + '" '+(sh.keywordID != null ? 'data-id="'+sh.keywordID+'"' : '')+' data-databaseID="' + sh.databaseID + '">' + initialSentence.slice(sh.start, sh.end+1) + '</span></span>';
-            index = sh.end+1;
-            popFromArray = true;
+            index = sh.end + 1;
+            sentenceHighlightArray.shift();
+            next = true;
         } else {
-            //if index < start skip the entity, as this part of the sentence was already highlighted
-            popFromArray=true;
+            // if index < start skip the entity, as this part of the sentence was already highlighted
+            next = true;
         }
     }
     
-    //add rest of non-highlighted text
+    // add rest of non-highlighted text
     highlightedSentence = highlightedSentence + initialSentence.slice(index);
             
     return highlightedSentence;

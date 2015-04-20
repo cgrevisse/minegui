@@ -53,6 +53,7 @@
 }
 
 /* Label colours */
+.label-entity { background-color: #000000; }
 .label-pattern { background-color: #d9534f; }
 .label-protein { background-color: #5cb85c; }
 .label-go-process { background-color: #ffa500; }
